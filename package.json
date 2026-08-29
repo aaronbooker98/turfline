@@ -1,0 +1,11 @@
+{
+  "name": "turfline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CRM and job management for an artificial grass installation business",
+  "type": "module",
+  "scripts": {
+    "start": "node dev-server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
