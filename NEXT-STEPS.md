@@ -37,7 +37,7 @@ Live at https://crm.yateartificialgrass.com/ with HTTPS.
       website + Google email untouched)
 - [x] `CNAME` file in the repo
 - [x] GitHub issued the HTTPS certificate
-- [ ] Final tick: "Enforce HTTPS" in Settings -> Pages (one checkbox)
+- [x] "Enforce HTTPS" ticked — http:// now redirects to https://
 
 ### Phase 2 — shared login + database
 Right now each device stores its own data. To have office + fitters on the same
