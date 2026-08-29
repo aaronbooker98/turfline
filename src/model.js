@@ -14,6 +14,14 @@ export const STAGES = [
 export const BOARD_STAGES = ["enquiry", "survey", "surveyed", "quoted", "won"];
 export const COLD_AFTER_DAYS = 14;
 
+// How the enquiry first reached us. Auto-capture sets phone/web; office sets manual.
+export const CHANNELS = [
+  { id: "manual", label: "Manual" },
+  { id: "phone", label: "Phone call" },
+  { id: "web", label: "Web form" }
+];
+export const channelLabel = (id) => (CHANNELS.find((c) => c.id === id) ?? CHANNELS[0]).label;
+
 export const stage = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0];
 
 export const DEFAULT_RATES = {

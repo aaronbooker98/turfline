@@ -29,6 +29,7 @@ const ui = {
   leadSort: { col: "created", dir: -1 },
   leadStage: "",
   leadSource: "",
+  leadChannel: "",
   deviceCrew: localStorage.getItem("turfline-crew") || null,
   readOnly: false,
   saveState: "idle",
@@ -311,7 +312,7 @@ document.addEventListener("click", async (e) => {
       document.querySelector('[data-f="name"]')?.focus();
       break;
     }
-    case "leads-clear": ui.leadStage = ui.leadSource = ui.search = ""; render(); break;
+    case "leads-clear": ui.leadStage = ui.leadSource = ui.leadChannel = ui.search = ""; render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "week-prev": ui.weekStart = addDays(ui.weekStart, -7); render(); break;
     case "week-next": ui.weekStart = addDays(ui.weekStart, 7); render(); break;
@@ -370,6 +371,7 @@ document.addEventListener("input", (e) => {
   }
   if (t.id === "leadstage") { ui.leadStage = t.value; return render(); }
   if (t.id === "leadsource") { ui.leadSource = t.value; return render(); }
+  if (t.id === "leadchannel") { ui.leadChannel = t.value; return render(); }
   if (t.id === "crewpick") {
     ui.deviceCrew = t.value || null;
     ui.deviceCrew ? localStorage.setItem("turfline-crew", ui.deviceCrew) : localStorage.removeItem("turfline-crew");

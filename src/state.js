@@ -28,6 +28,7 @@ export function normalise(state) {
   if (!Array.isArray(s.leads)) s.leads = [];
   for (const l of s.leads) {
     l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= [];
+    l.channel ??= "manual";
   }
   return s;
 }
@@ -40,6 +41,7 @@ export function newLead(rates) {
     id: newId(),
     name: "", phone: "", email: "", address: "", postcode: "",
     source: "", campaign: "",
+    channel: "manual",
     stage: "enquiry", createdAt: today, stageAt: today,
     nextAction: addDays(today, 1),
     nextNote: "Call to qualify and book survey",

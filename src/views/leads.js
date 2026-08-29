@@ -1,6 +1,6 @@
 // Every enquiry in one sortable, filterable table — the CRM list view.
 import { esc, money, num, fmtDate } from "../util.js";
-import { quoteFor, actionState, isCold, stage, STAGES } from "../model.js";
+import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, channelLabel } from "../model.js";
 import { leadValue } from "../analytics.js";
 import { icon } from "../icons.js";
 
@@ -24,6 +24,7 @@ export function renderLeads(ctx) {
   let rows = state.leads.filter((l) => {
     if (ui.leadStage && l.stage !== ui.leadStage) return false;
     if (ui.leadSource && (l.source || "") !== ui.leadSource) return false;
+    if (ui.leadChannel && (l.channel || "manual") !== ui.leadChannel) return false;
     if (q && ![l.name, l.address, l.postcode, l.phone, l.source, l.campaign]
       .join(" ").toLowerCase().includes(q)) return false;
     return true;
@@ -56,7 +57,8 @@ export function renderLeads(ctx) {
         <div class="lt-sub">${esc(l.postcode || l.address || "No address yet")}</div>
       </td>
       <td><span class="pill ${stageTone(l.stage)}">${esc(st.label)}</span>${isCold(l) ? ` <span class="pill neutral">Cold</span>` : ""}</td>
-      <td>${l.source ? esc(l.source) : "<span class='lt-dim'>—</span>"}</td>
+      <td>${l.source ? esc(l.source) : "<span class='lt-dim'>—</span>"}
+        <div class="lt-sub">${esc(channelLabel(l.channel))}</div></td>
       <td class="r num">${l.survey?.areaM2 ? num(l.survey.areaM2) + " m²" : "<span class='lt-dim'>—</span>"}</td>
       <td class="r num">${v > 0 ? money(v) : "<span class='lt-dim'>—</span>"}</td>
       <td>${l.nextAction
@@ -77,7 +79,11 @@ export function renderLeads(ctx) {
         <option value="">All sources</option>
         ${sources.map((s) => `<option${ui.leadSource === s ? " selected" : ""}>${esc(s)}</option>`).join("")}
       </select>
-      ${(ui.leadStage || ui.leadSource || ui.search) ? `<button class="btn sm ghost" data-act="leads-clear">Clear</button>` : ""}
+      <select class="inp sel" id="leadchannel">
+        <option value="">Calls &amp; forms</option>
+        ${CHANNELS.map((c) => `<option value="${c.id}"${ui.leadChannel === c.id ? " selected" : ""}>${esc(c.label)}</option>`).join("")}
+      </select>
+      ${(ui.leadStage || ui.leadSource || ui.leadChannel || ui.search) ? `<button class="btn sm ghost" data-act="leads-clear">Clear</button>` : ""}
       <span class="lt-count">${rows.length} of ${state.leads.length} · ${money(totalValue)}</span>
     </div>
     ${rows.length ? `<div class="ltwrap"><table class="ltable">

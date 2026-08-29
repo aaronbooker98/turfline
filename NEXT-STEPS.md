@@ -67,7 +67,10 @@ Loose ends:
 
 Two sources to bring in. Build ONE receiving endpoint on Supabase
 (RPC `ingest_lead(payload jsonb)`, security definer, shared-secret check, inserts
-into `leads`), then point both at it.
+into `leads`), then point both at it. Each incoming lead sets `channel`
+("phone" for WhatConverts, "web" for WPForms) and `source` (the marketing
+attribution). The Leads tab already filters on `channel` (Phone call / Web form /
+Manual) and `source`.
 
 1. **WhatConverts** (call tracking) — the higher-value one; brings real
    campaign/keyword attribution. Has a webhook. Aaron controls it (no agency).

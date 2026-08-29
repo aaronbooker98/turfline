@@ -1,6 +1,6 @@
 // The record editor: one enquiry from first call to aftercare.
 import { esc, num, money, money2, fmtDate, dayDiff, todayISO } from "../util.js";
-import { quoteFor, actionState, isCold, stage, STAGES } from "../model.js";
+import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS } from "../model.js";
 import { icon } from "../icons.js";
 
 /** The quote breakdown, also re-rendered on its own while typing. */
@@ -52,6 +52,9 @@ export function renderDrawer(ctx, lead) {
       ${field("Email", "email", lead.email, "email")}
       <div class="grid2">${field("Address", "address", lead.address)}${field("Postcode", "postcode", lead.postcode)}</div>
       <div class="grid2">${field("Lead source", "source", lead.source, "text", 'placeholder="Google Ads, referral…"')}${field("Campaign / keyword", "campaign", lead.campaign)}</div>
+      <div class="field"><label class="lbl">How it came in</label>
+        <select class="inp" data-f="channel"${dis}>${CHANNELS.map((c) =>
+          `<option value="${c.id}"${(lead.channel || "manual") === c.id ? " selected" : ""}>${esc(c.label)}</option>`).join("")}</select></div>
     </div>
 
     <div class="sect"><h4>Survey</h4>
