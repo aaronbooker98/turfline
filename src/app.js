@@ -1,16 +1,18 @@
 // Wiring: view routing, event delegation, persistence.
 import { esc, todayISO, addDays, mondayOf, setPath, fmtDate } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
-import { defaultState, normalise, newLead, loadLocal, saveLocal, sampleLeads, CREW_COLOURS } from "./state.js";
+import { defaultState, normalise, newLead, loadLocal, saveLocal, sampleLeads, seededState, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import { renderToday } from "./views/today.js";
+import { renderLeads } from "./views/leads.js";
 import { renderPipeline } from "./views/pipeline.js";
 import { renderSchedule } from "./views/schedule.js";
+import { renderAnalytics } from "./views/analytics.js";
 import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
 
-let state = loadLocal() ?? normalise(defaultState());
+let state = loadLocal() ?? seededState();
 
 const ui = {
   view: "today",
@@ -19,6 +21,9 @@ const ui = {
   weekStart: mondayOf(todayISO()),
   search: "",
   showClosed: false,
+  leadSort: { col: "created", dir: -1 },  // Leads table sort
+  leadStage: "",
+  leadSource: "",
   deviceCrew: localStorage.getItem("turfline-crew") || null, // per-device, not shared
   readOnly: false,
   saveState: "idle"
@@ -28,8 +33,10 @@ const ctx = { get state() { return state; }, ui };
 const leadById = (id) => state.leads.find((l) => l.id === id);
 const VIEWS = {
   today: { title: "Today", sub: "What needs you, right now", render: renderToday },
+  leads: { title: "Leads", sub: "Every enquiry, sortable and searchable", render: renderLeads },
   pipeline: { title: "Pipeline", sub: "Every live enquiry by stage", render: renderPipeline },
   schedule: { title: "Schedule", sub: "Crews, jobs and clashes", render: renderSchedule },
+  analytics: { title: "Analytics", sub: "Funnel, win rate and where the money comes from", render: renderAnalytics },
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
@@ -77,8 +84,10 @@ function render() {
   const c = badgeCounts();
   const nav = [
     ["today", "Today", c.action, c.overdue > 0],
+    ["leads", "Leads", state.leads.length, false],
     ["pipeline", "Pipeline", c.pipeline, false],
     ["schedule", "Schedule", c.installs, false],
+    ["analytics", "Analytics", 0, false],
     ["jobs", "Job sheets", 0, false],
     ["settings", "Settings", 0, false]
   ];
@@ -125,6 +134,13 @@ document.addEventListener("click", (e) => {
   if ((el = hit("[data-nav]"))) { ui.view = el.dataset.nav; ui.openId = null; return render(); }
   if ((el = hit("[data-open]"))) { ui.openId = el.dataset.open; return render(); }
   if ((el = hit("[data-toggle]"))) { ui.expandedJob = ui.expandedJob === el.dataset.toggle ? null : el.dataset.toggle; return render(); }
+  if ((el = hit("[data-sort]"))) {
+    const col = el.dataset.sort;
+    ui.leadSort = ui.leadSort.col === col
+      ? { col, dir: -ui.leadSort.dir }
+      : { col, dir: ["name", "source"].includes(col) ? 1 : -1 };
+    return render();
+  }
 
   const lead = leadById(ui.openId);
   if ((el = hit("[data-stage]")) && lead && !ui.readOnly) { setStage(lead, el.dataset.stage); save(); return render(); }
@@ -145,12 +161,13 @@ document.addEventListener("click", (e) => {
       const l = newLead(state.rates);
       state.leads.unshift(l);
       ui.openId = l.id;
-      if (["jobs", "settings"].includes(ui.view)) ui.view = "pipeline";
+      if (["jobs", "settings", "analytics"].includes(ui.view)) ui.view = "leads";
       save(); render();
       document.querySelector('[data-f="name"]')?.focus();
       break;
     }
     case "seed": state.leads = sampleLeads(state.rates); save(); render(); break;
+    case "leads-clear": ui.leadStage = ui.leadSource = ui.search = ""; render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "week-prev": ui.weekStart = addDays(ui.weekStart, -7); render(); break;
     case "week-next": ui.weekStart = addDays(ui.weekStart, 7); render(); break;
@@ -210,6 +227,8 @@ document.addEventListener("input", (e) => {
     again?.setSelectionRange(pos, pos);
     return;
   }
+  if (t.id === "leadstage") { ui.leadStage = t.value; return render(); }
+  if (t.id === "leadsource") { ui.leadSource = t.value; return render(); }
   if (t.id === "crewpick") {
     ui.deviceCrew = t.value || null;
     ui.deviceCrew ? localStorage.setItem("turfline-crew", ui.deviceCrew) : localStorage.removeItem("turfline-crew");

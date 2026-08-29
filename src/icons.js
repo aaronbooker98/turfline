@@ -1,7 +1,9 @@
 // Inline SVG paths, stroked with currentColor so they inherit theme tokens.
 const PATHS = {
   today: '<path d="M3 8h18M7 3v3m10-3v3M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/>',
+  leads: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 7.5h5M16 11.5h5M16 15.5h3"/>',
   pipeline: '<path d="M3 5h18M6 12h12M10 19h4"/>',
+  analytics: '<path d="M3 20h18"/><path d="M6 20v-6M12 20V6M18 20v-9"/>',
   schedule: '<path d="M3 9h18M8 3v4m8-4v4M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M8 14h3v3H8z" fill="currentColor" stroke="none"/>',
   jobs: '<path d="M9 3h6v3H9zM4 6h16a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a1 1 0 0 1 1-1Z"/><path d="M8 12h8M8 16h5"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>',

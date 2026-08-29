@@ -10,11 +10,12 @@ what runs in the browser.
 
 ```bash
 npm start          # http://localhost:5173
-npm test           # unit tests for the pricing and scheduling rules
+npm test           # unit tests for the pricing, scheduling and analytics rules
 ```
 
 `npm start` serves the folder over http, which ES modules need — opening `index.html`
-straight off disk will not work.
+straight off disk will not work. A fresh load comes pre-filled with example records
+so every screen has something to show; clear them from Settings → Your data.
 
 ## What's where
 
@@ -24,6 +25,7 @@ dev-server.js         20-line static server, no dependencies
 src/
   app.js              routing, event delegation, persistence
   model.js            the business rules — quoting, stages, follow-ups, clashes
+  analytics.js        aggregations — funnel, win rate, revenue by month, source stats
   state.js            state shape, defaults, localStorage, sample data
   util.js             dates, money, escaping
   icons.js            inline SVG
@@ -31,18 +33,23 @@ src/
   views/              one module per screen
 test/
   model.test.js       covers model.js — run before you change pricing
+  analytics.test.js   covers analytics.js — the funnel and money maths
 ```
 
-`model.js` has no DOM in it on purpose: everything that decides money or dates is
-testable without a browser. If you change how a job is priced, change it there and
-add a test.
+`model.js` and `analytics.js` have no DOM in them on purpose: everything that decides
+money or dates is testable without a browser. If you change how a job is priced or how
+a number on the Analytics screen is worked out, change it there and add a test.
 
 ## Screens
 
 - **Today** — overdue and due-today follow-ups, plus installs in the next week.
   Quotes with no movement for 14 days are flagged cold.
+- **Leads** — every enquiry in one table: search, filter by stage or source, sort any
+  column. Click a row to open the full record.
 - **Pipeline** — board by stage with values, source and search.
 - **Schedule** — crews across a week. Two jobs on one crew on one day turn red.
+- **Analytics** — the whole business at a glance: enquiry → won funnel, win rate,
+  average job value and days to close, revenue by month, and which lead sources pay.
 - **Job sheets** — phone view for fitters: address, spec, materials to load, mark complete.
 - **Settings** — rates that drive every quote, crews, export/import.
 
