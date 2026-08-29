@@ -88,6 +88,26 @@ Verify-JWT off, secret INGEST_TOKEN set. Tested OK (phone/web mapping, dedup on
 
 Until WPForms is wired: office adds web enquiry emails to the CRM by hand.
 
+**Phone numbers:**
+- 01454 537330 — AirLandline landline, on the Google listing. Track by adding a
+  WhatConverts number and forwarding AirLandline through it.
+- 07861 676629 — O2 mobile, signwritten on the vans (must keep). Track via O2 call
+  divert to a WhatConverts number, or port it. Decision pending.
+- Whatever WhatConverts number currently feeds the webhook = the Google Ads number.
+
+**Brief for YZ Designs (they manage WhatConverts + the website):**
+1. Confirm the WhatConverts webhook is live, pointed at the ingest URL, "new lead",
+   Phone Call + Web Form.
+2. Add a WhatConverts tracking number for 01454 537330; set AirLandline to forward
+   through it. Label "Landline - organic".
+3. Advise best way to track 07861 676629 (keep the number) - divert vs port.
+4. Add a webhook on the WPForms contact form to the same ingest URL. Confirm the
+   WPForms licence supports webhooks (Pro/Elite or Zapier addon) else use a
+   `wpforms_process_complete` snippet. May need mapping tweaks for WPForms' payload.
+
+Ingest webhook URL:
+https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN in Supabase Edge Function secrets>
+
 **Build outline:**
 1. Create Supabase project; tables for leads, crews, rates/business settings
 2. Add Supabase JS client; move state.js load/save from localStorage to Supabase
