@@ -96,8 +96,9 @@ function render() {
   document.getElementById("app").innerHTML = `
     <div class="shell">
       <nav class="rail" aria-label="Sections">
-        <div class="brand"><span class="brand-mark">${icon("leaf", "")}</span>
-          <span><span class="brand-name">Turfline</span><span class="brand-sub">${esc(state.business.name)}</span></span></div>
+        <div class="brand">
+          <img class="brand-logo" src="src/assets/yate-logo.png" alt="${esc(state.business.name)}">
+          <span class="brand-sub">Lead &amp; job manager</span></div>
         ${nav.map(([id, label, count, hot]) => `<button class="navbtn" data-nav="${id}" aria-current="${ui.view === id}">
           ${icon(id)}<span>${esc(label)}</span>${count > 0 ? `<span class="cnt${hot ? " hot" : ""}">${count}</span>` : ""}</button>`).join("")}
         <div class="rail-foot"><div class="savechip" id="savechip"></div></div>

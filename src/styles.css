@@ -1,20 +1,20 @@
 /* Turfline — design tokens.
-   The look is "setting-out": survey marking-spray orange for anything that asks
-   for an action, grass green kept back for the finished job and money won, on a
-   cool paper ground. Squared-off corners and a short accent mark — the line you
-   spray before you dig — as the recurring motif.
+   Pulled from the Yate Artificial Grass logo: white and grass green on a near-
+   black charcoal. Green is the brand and the action colour (buttons, active
+   nav, the short accent mark before each heading); the dark theme's ground
+   matches the logo's charcoal so the plate at the top of the rail sits flush.
    Light palette on :root, dark redefined twice so both the OS setting and an
    explicit data-theme choice resolve correctly. Never declare a colour only
    inside a media block. */
 :root{
-  --ground:#F6F7F5; --surface:#FFFFFF; --surface-2:#EDEFEA; --surface-3:#E0E3DC;
-  --ink:#18201C; --ink-2:#454E47; --muted:#78807A; --line:#DDE0DA;
-  --accent:#D2542A; --accent-hover:#B4451F; --accent-soft:#FAE6DC; --accent-ink:#FFFFFF;
+  --ground:#F5F7F3; --surface:#FFFFFF; --surface-2:#EBEEE7; --surface-3:#DEE3D8;
+  --ink:#1B1F1A; --ink-2:#474E43; --muted:#767D71; --line:#DCE0D6;
+  --accent:#3C8129; --accent-hover:#316C21; --accent-soft:#E2EFDB; --accent-ink:#FFFFFF;
   --good:#2C7A4B; --good-bg:#E3F0E7; --warn:#8C6316; --warn-bg:#F5EBD6;
   --crit:#B23B2C; --crit-bg:#F6E0DC; --info:#3C6076; --info-bg:#E2EBF0;
-  --shadow-sm:0 1px 2px rgba(24,32,28,.07);
-  --shadow:0 1px 2px rgba(24,32,28,.06), 0 10px 28px -14px rgba(24,32,28,.22);
-  --shadow-lg:0 24px 60px -20px rgba(24,32,28,.34);
+  --shadow-sm:0 1px 2px rgba(20,26,18,.07);
+  --shadow:0 1px 2px rgba(20,26,18,.06), 0 10px 28px -14px rgba(20,26,18,.22);
+  --shadow-lg:0 24px 60px -20px rgba(20,26,18,.34);
   --r:8px; --r-sm:5px;
   --f-display:'Bricolage Grotesque','Archivo','Helvetica Neue',Arial,sans-serif;
   --f-body:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;
@@ -22,10 +22,10 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --ground:#141712; --surface:#1C1F18; --surface-2:#24281F; --surface-3:#2E332A;
-    --ink:#E9EBE2; --ink-2:#BAC0B4; --muted:#868D80; --line:#2F352B;
-    --accent:#F0875F; --accent-hover:#F5A182; --accent-soft:#32201A; --accent-ink:#180C06;
-    --good:#7FC395; --good-bg:#1D2B21; --warn:#D8AE5A; --warn-bg:#2E2717;
+    --ground:#1A1C18; --surface:#222420; --surface-2:#2A2D27; --surface-3:#353930;
+    --ink:#E9EBE3; --ink-2:#B9BFB1; --muted:#868D80; --line:#343930;
+    --accent:#6FBF4E; --accent-hover:#83CF63; --accent-soft:#26331F; --accent-ink:#0E1A07;
+    --good:#7FC395; --good-bg:#1E2C22; --warn:#D8AE5A; --warn-bg:#2E2717;
     --crit:#E3887A; --crit-bg:#2E1E1B; --info:#8FB6D0; --info-bg:#1B252C;
     --shadow-sm:0 1px 2px rgba(0,0,0,.4);
     --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.7);
@@ -33,10 +33,10 @@
   }
 }
 :root[data-theme="dark"]{
-  --ground:#141712; --surface:#1C1F18; --surface-2:#24281F; --surface-3:#2E332A;
-  --ink:#E9EBE2; --ink-2:#BAC0B4; --muted:#868D80; --line:#2F352B;
-  --accent:#F0875F; --accent-hover:#F5A182; --accent-soft:#32201A; --accent-ink:#180C06;
-  --good:#7FC395; --good-bg:#1D2B21; --warn:#D8AE5A; --warn-bg:#2E2717;
+  --ground:#1A1C18; --surface:#222420; --surface-2:#2A2D27; --surface-3:#353930;
+  --ink:#E9EBE3; --ink-2:#B9BFB1; --muted:#868D80; --line:#343930;
+  --accent:#6FBF4E; --accent-hover:#83CF63; --accent-soft:#26331F; --accent-ink:#0E1A07;
+  --good:#7FC395; --good-bg:#1E2C22; --warn:#D8AE5A; --warn-bg:#2E2717;
   --crit:#E3887A; --crit-bg:#2E1E1B; --info:#8FB6D0; --info-bg:#1B252C;
   --shadow-sm:0 1px 2px rgba(0,0,0,.4);
   --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.7);
@@ -55,11 +55,9 @@ svg{flex:none}
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:216px 1fr;min-height:100vh}
 .rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px;padding:18px 12px;position:sticky;top:0;height:100vh}
-.brand{display:flex;align-items:center;gap:9px;padding:2px 8px 18px}
-.brand-mark{width:26px;height:26px;border-radius:5px;background:var(--accent);display:grid;place-items:center;flex:none}
-.brand-mark svg{width:15px;height:15px;color:var(--accent-ink)}
-.brand-name{font-family:var(--f-display);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.07em}
-.brand-sub{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;font-weight:500;margin-top:-2px}
+.brand{display:block;padding:2px 4px 16px}
+.brand-logo{display:block;width:100%;max-width:184px;border-radius:6px}
+.brand-sub{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin:8px 0 0 3px}
 .navbtn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);border:0;background:transparent;color:var(--ink-2);cursor:pointer;text-align:left;font-weight:500;font-size:13.5px;width:100%;transition:background .12s,color .12s;position:relative}
 .navbtn:hover{background:var(--surface-2);color:var(--ink)}
 .navbtn[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}

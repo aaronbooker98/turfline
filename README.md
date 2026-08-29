@@ -29,7 +29,8 @@ src/
   state.js            state shape, defaults, localStorage, sample data
   util.js             dates, money, escaping
   icons.js            inline SVG
-  styles.css          design tokens and every component
+  styles.css          design tokens (palette taken from the Yate logo) and components
+  assets/             the Yate Artificial Grass logo, shown in the sidebar
   views/              one module per screen
 test/
   model.test.js       covers model.js — run before you change pricing
