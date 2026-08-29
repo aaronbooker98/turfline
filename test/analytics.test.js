@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  furthestStage, funnel, winRate, byMonth, bySource, avgDaysToClose, overview
+  furthestStage, funnel, winRate, byMonth, bySource, sourceKey, avgDaysToClose, overview
 } from "../src/analytics.js";
 import { DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
@@ -71,6 +71,14 @@ test("byMonth buckets leads created and revenue won into calendar months", () =>
   assert.equal(rows.at(-1).won, 1);
   assert.ok(rows.at(-1).revenue > 0);
   assert.equal(rows.at(-2).leads, 1); // July
+});
+
+test("sourceKey splits WhatConverts calls out by their real channel", () => {
+  assert.equal(sourceKey({ source: "WhatConverts", campaign: "Google Adwords · fake grass yate" }), "Google Adwords");
+  assert.equal(sourceKey({ source: "WhatConverts", campaign: "Google Organic" }), "Google Organic");
+  assert.equal(sourceKey({ source: "WhatConverts", campaign: "" }), "WhatConverts");
+  assert.equal(sourceKey({ source: "Referral" }), "Referral");
+  assert.equal(sourceKey({}), "Unknown");
 });
 
 test("bySource ranks channels by revenue and reports win rate", () => {

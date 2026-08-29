@@ -58,7 +58,7 @@ export function renderLeads(ctx) {
       </td>
       <td><span class="pill ${stageTone(l.stage)}">${esc(st.label)}</span>${isCold(l) ? ` <span class="pill neutral">Cold</span>` : ""}</td>
       <td>${l.source ? esc(l.source) : "<span class='lt-dim'>—</span>"}
-        <div class="lt-sub">${esc(channelLabel(l.channel))}</div></td>
+        <div class="lt-sub">${esc([channelLabel(l.channel), l.campaign].filter(Boolean).join(" · "))}</div></td>
       <td class="r num">${l.survey?.areaM2 ? num(l.survey.areaM2) + " m²" : "<span class='lt-dim'>—</span>"}</td>
       <td class="r num">${v > 0 ? money(v) : "<span class='lt-dim'>—</span>"}</td>
       <td>${l.nextAction

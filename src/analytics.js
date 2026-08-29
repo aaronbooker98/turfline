@@ -80,11 +80,20 @@ export function byMonth(leads, state, months = 6, today = todayISO()) {
   return rows;
 }
 
+/** Grouping key for the source breakdown. Calls captured by WhatConverts carry
+ *  "WhatConverts" as the source and the real channel ("Google Adwords ·
+ *  keyword") in the campaign — split those out so the breakdown is useful. */
+export function sourceKey(lead) {
+  if ((lead.source || "").toLowerCase() === "whatconverts" && lead.campaign)
+    return lead.campaign.split(" · ")[0].trim() || lead.source;
+  return lead.source || "Unknown";
+}
+
 /** Per lead source: volume, conversion and money won. Best sources first. */
 export function bySource(leads, state) {
   const map = new Map();
   for (const l of leads) {
-    const name = l.source || "Unknown";
+    const name = sourceKey(l);
     const row = map.get(name) ?? { source: name, leads: 0, won: 0, lost: 0, revenue: 0, pipeline: 0 };
     row.leads++;
     if (WON_STAGES.includes(l.stage)) { row.won++; row.revenue += leadValue(l, state); }
