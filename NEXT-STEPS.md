@@ -72,16 +72,21 @@ into `leads`), then point both at it. Each incoming lead sets `channel`
 attribution). The Leads tab already filters on `channel` (Phone call / Web form /
 Manual) and `source`.
 
-1. **WhatConverts** (call tracking) — the higher-value one; brings real
-   campaign/keyword attribution. Has a webhook. Aaron controls it (no agency).
-   NEED TO CHECK: WhatConverts plan; does its webhook allow a custom header
-   (for the Supabase apikey)? If not -> Zapier in between, or a tiny Edge Function.
-2. **WPForms** contact form on yateartificialgrass.com (WordPress + Divi, by
-   YZ Designs). Needs YZ Designs (~10 min) to add a webhook. Check first whether
-   their WPForms licence supports webhooks (Pro/Elite or Zapier addon); if not,
-   a `wpforms_process_complete` snippet.
+Catcher: **Edge Function `ingest`** (supabase/functions/ingest/index.ts), deployed,
+Verify-JWT off, secret INGEST_TOKEN set. Tested OK (phone/web mapping, dedup on
+`data._ext`, spam skip). Webhook URL:
+`https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN>`
 
-Until then: office adds enquiry emails to the CRM by hand (New enquiry).
+1. **WhatConverts** — CALLS ONLY (their web forms are not tracked by WhatConverts).
+   Webhook is URL-only, no headers. Point it at the URL above, trigger "new lead",
+   lead types = Phone Call (+ chat/text if used). [in progress]
+2. **WPForms** contact form on yateartificialgrass.com (WordPress + Divi, by
+   YZ Designs) — the ONLY path for web enquiries. Same catcher URL; YZ Designs
+   adds the webhook on the WP side (~10 min). Check WPForms licence supports
+   webhooks (Pro/Elite or Zapier addon) else a `wpforms_process_complete` snippet.
+   The `ingest` function's form-field mapping may need tuning to WPForms' payload.
+
+Until WPForms is wired: office adds web enquiry emails to the CRM by hand.
 
 **Build outline:**
 1. Create Supabase project; tables for leads, crews, rates/business settings
