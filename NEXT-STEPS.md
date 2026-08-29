@@ -4,7 +4,7 @@ _Last updated: 2026-08-29_
 
 ## Links
 
-- **Live app:** https://aaronbooker98.github.io/turfline/
+- **Live app:** https://crm.yateartificialgrass.com/ (also https://aaronbooker98.github.io/turfline/)
 - **Code (GitHub):** https://github.com/aaronbooker98/turfline
 - **Project folder:** `~/Desktop/turfline`
 - **Local preview (only while a dev server is running):** http://localhost:5173
@@ -30,13 +30,14 @@ The live site rebuilds itself about a minute later.
 
 ## Still to do
 
-### Phase 1 — custom web address
-`crm.yateartificialgrass.com` pointing at the current free GitHub site.
-- Add a `CNAME` file to the repo
-- Add one DNS record in the Hostinger control panel (domain is managed at Hostinger,
-  account: aaron@yateartificialgrass.com)
-- Turn on HTTPS in GitHub Pages settings
-- Existing website is untouched
+### Phase 1 — custom web address  (IN PROGRESS)
+`crm.yateartificialgrass.com` pointing at the free GitHub site.
+- [x] DNS CNAME `crm` -> `aaronbooker98.github.io` added in Squarespace
+      (domain is registered "through Google", now managed at account.squarespace.com;
+      website + Google email untouched)
+- [x] `CNAME` file added to the repo
+- [ ] Push, then wait for GitHub to issue the HTTPS certificate (~15 min)
+- [ ] Tick "Enforce HTTPS" in Settings -> Pages
 
 ### Phase 2 — shared login + database
 Right now each device stores its own data. To have office + fitters on the same
