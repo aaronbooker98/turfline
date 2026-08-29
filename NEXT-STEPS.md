@@ -39,18 +39,20 @@ Live at https://crm.yateartificialgrass.com/ with HTTPS.
 - [x] GitHub issued the HTTPS certificate
 - [x] "Enforce HTTPS" ticked — http:// now redirects to https://
 
-### Phase 2 — shared login + database  (BUILT, being tested)
-Branch: `phase-2-supabase`. Supabase project `jhkhchhszwmtlhnhmowr`.
-- [x] `supabase/setup.sql` — tables, RLS, job-sheet function, realtime, seed data
-- [x] `src/db.js` — Supabase data layer (auth, load, diff-and-push, realtime)
-- [x] `src/views/login.js` + login styling
-- [x] `src/app.js` reworked: async boot, auth gate, role gating, server sync
-- [ ] **Aaron:** run the SQL + create the two logins — see SUPABASE-SETUP.md
-- [ ] Test end-to-end (both logins, two devices, live sync)
-- [ ] Merge `phase-2-supabase` -> `main` to go live
+### Phase 2 — shared login + database  (DONE, live 2026-08-29)
+Supabase project `jhkhchhszwmtlhnhmowr`. Live at crm.yateartificialgrass.com.
+- Two shared logins: office@ (full) / fitters@ (job sheets + schedule only).
+  Fitters are blocked from leads/pricing at the database, verified.
+- Data in hosted Postgres; office devices live-sync; fitters refresh on focus.
+- `supabase/setup.sql` is the schema of record. `src/db.js` is the data layer.
+- Login creds live in Supabase dashboard -> Authentication -> Users.
 
-Shared logins, hosted Postgres, live sync between office devices. Free tier now,
-~£20/mo only once it grows. App stays on the current GitHub domain.
+Loose ends:
+- [ ] Change the fitters password from "YAG123" to something stronger
+      (Supabase -> Auth -> Users -> the fitters row -> reset password).
+- [ ] Settings still has "Load example data" / "Delete every record" — office only
+      and confirm-gated, but consider removing before wider use.
+- [ ] delete local branch `phase-2-supabase` (merged).
 
 **Logins (decided 2026-08-29): two SHARED accounts, not per-person.**
 - **Office** — one email+password shared by office staff. Full access to
