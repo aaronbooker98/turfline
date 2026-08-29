@@ -51,8 +51,16 @@ now, ~£20/mo only once it grows. App stays on the current GitHub domain.
   assigned Job sheets, and Schedule (view only). Hidden: Leads, Pipeline,
   Analytics, Settings, and all quote £ amounts. Can mark a job complete.
 
-**Still open:** existing data to import (Zoho? spreadsheet? how many records?) or
-start fresh.
+**Data:** no back-catalogue to import — start fresh, add leads from now on.
+
+**Website leads (follow-up after Phase 2, not a blocker):**
+- yateartificialgrass.com = WordPress + Divi, built by YZ Designs. Contact form is
+  **WPForms**. Submissions currently only email aaron@yateartificialgrass.com.
+- Plan: build a Supabase function endpoint; YZ Designs adds a WPForms webhook
+  pointing at it so website enquiries auto-create leads (source = "Website form").
+- Needs WPForms Pro/Elite or its Zapier addon for webhooks; if only the basic
+  licence, use a small `wpforms_process_complete` code snippet instead.
+- Until then: office copies enquiry emails into the CRM manually (New enquiry).
 
 **Build outline:**
 1. Create Supabase project; tables for leads, crews, rates/business settings
