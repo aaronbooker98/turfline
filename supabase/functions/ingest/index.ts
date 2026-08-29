@@ -48,11 +48,13 @@ Deno.serve(async (req) => {
   const medium = pick("lead_medium", "medium").toLowerCase();
   const keyword = pick("lead_keyword", "keyword");
   const landing = pick("landing_url", "landing_page_url", "landing_page");
+  const paidClick = !!pick("gclid", "wbraid", "gbraid", "msclkid", "fbclid");
   const channelWord = (() => {
     const s = src ? src[0].toUpperCase() + src.slice(1) : "";
-    if (!s) return "";
-    if (["cpc", "ppc", "paid", "paidsearch"].includes(medium)) return `${s} Ads`;
+    if (!s) return paidClick ? "Paid ad" : "";
+    if (paidClick || ["cpc", "ppc", "paid", "paidsearch", "paid_search"].includes(medium)) return `${s} Ads`;
     if (medium === "organic") return `${s} (organic)`;
+    if (["referral", "social"].includes(medium)) return `${s} (${medium})`;
     return s;
   })();
   // Source = where the lead came through (WhatConverts). The marketing detail
