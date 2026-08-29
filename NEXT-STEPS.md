@@ -41,10 +41,27 @@ Live at https://crm.yateartificialgrass.com/ with HTTPS.
 
 ### Phase 2 — shared login + database
 Right now each device stores its own data. To have office + fitters on the same
-live data: **Supabase** (hosted Postgres + user accounts + live sync). Free tier
+live data: **Supabase** (hosted Postgres + shared database + live sync). Free tier
 now, ~£20/mo only once it grows. App stays on the current GitHub domain.
-- Open questions: existing data to import (Zoho? spreadsheet? how many records?);
-  how many staff logins; office-vs-fitter access split.
+
+**Logins (decided 2026-08-29): two SHARED accounts, not per-person.**
+- **Office** — one email+password shared by office staff. Full access to
+  everything (Today, Leads, Pipeline, Schedule, Analytics, Job sheets, Settings).
+- **Fitters** — one email+password shared by all fitters. Sees ONLY: their
+  assigned Job sheets, and Schedule (view only). Hidden: Leads, Pipeline,
+  Analytics, Settings, and all quote £ amounts. Can mark a job complete.
+
+**Still open:** existing data to import (Zoho? spreadsheet? how many records?) or
+start fresh.
+
+**Build outline:**
+1. Create Supabase project; tables for leads, crews, rates/business settings
+2. Add Supabase JS client; move state.js load/save from localStorage to Supabase
+3. Realtime subscription so edits sync between devices
+4. Login screen; hide/lock UI by role (office vs fitters)
+5. Row-level security so the fitters login can't pull pipeline/money data
+6. Seed / import real data
+7. Keep export-backup working as a safety net
 
 ## Notes
 
