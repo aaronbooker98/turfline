@@ -41,17 +41,16 @@ Live at https://crm.yateartificialgrass.com/ with HTTPS.
 
 ### Phase 2 — shared login + database
 Right now each device stores its own data. To have office + fitters on the same
-live data:
-- **Recommended:** Supabase (hosted Postgres + user accounts + live sync).
-  Free tier now, ~£20/mo once it grows. App stays on the same domain.
-- **Alternative:** build it all on Hostinger's MySQL — one bill, but more build
-  time and no built-in login/sync.
+live data: **Supabase** (hosted Postgres + user accounts + live sync). Free tier
+now, ~£20/mo only once it grows. App stays on the current GitHub domain.
 - Open questions: existing data to import (Zoho? spreadsheet? how many records?);
   how many staff logins; office-vs-fitter access split.
 
 ## Notes
 
-- The Hostinger Claude Code plugin is installed but not active — needs a VS Code
-  window reload and a Hostinger API token to connect. Not needed unless we decide
-  to drive Hostinger changes through it.
-- Never share the Hostinger password. The plugin uses an API token instead.
+- Hostinger is NOT part of the plan. Checked the account (2026-08-29): no domains,
+  no hosting plan, no subscriptions — it's empty. Using it would mean buying
+  hosting for a worse result than the free GitHub + Supabase setup.
+- The Hostinger Claude Code plugin is connected but unused. Harmless, leave it.
+- Domain is at Squarespace (registered "through Google"). Website + Google email
+  live there, untouched.
