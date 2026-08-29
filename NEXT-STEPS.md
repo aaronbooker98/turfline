@@ -39,10 +39,18 @@ Live at https://crm.yateartificialgrass.com/ with HTTPS.
 - [x] GitHub issued the HTTPS certificate
 - [x] "Enforce HTTPS" ticked — http:// now redirects to https://
 
-### Phase 2 — shared login + database
-Right now each device stores its own data. To have office + fitters on the same
-live data: **Supabase** (hosted Postgres + shared database + live sync). Free tier
-now, ~£20/mo only once it grows. App stays on the current GitHub domain.
+### Phase 2 — shared login + database  (BUILT, being tested)
+Branch: `phase-2-supabase`. Supabase project `jhkhchhszwmtlhnhmowr`.
+- [x] `supabase/setup.sql` — tables, RLS, job-sheet function, realtime, seed data
+- [x] `src/db.js` — Supabase data layer (auth, load, diff-and-push, realtime)
+- [x] `src/views/login.js` + login styling
+- [x] `src/app.js` reworked: async boot, auth gate, role gating, server sync
+- [ ] **Aaron:** run the SQL + create the two logins — see SUPABASE-SETUP.md
+- [ ] Test end-to-end (both logins, two devices, live sync)
+- [ ] Merge `phase-2-supabase` -> `main` to go live
+
+Shared logins, hosted Postgres, live sync between office devices. Free tier now,
+~£20/mo only once it grows. App stays on the current GitHub domain.
 
 **Logins (decided 2026-08-29): two SHARED accounts, not per-person.**
 - **Office** — one email+password shared by office staff. Full access to
