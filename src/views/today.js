@@ -30,10 +30,9 @@ export function renderToday(ctx) {
   if (!state.leads.length) {
     return `<div class="card"><div class="empty" style="padding:56px 20px">
       <strong>Nothing in here yet</strong>
-      Add a real enquiry to get going, or load a set of example records to see how it all fits together.
+      Add your first enquiry to get going.
       <div style="margin-top:18px;display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
         <button class="btn primary" data-act="new">${icon("plus")}New enquiry</button>
-        <button class="btn" data-act="seed">Load example data</button>
       </div></div></div>`;
   }
 

@@ -47,12 +47,10 @@ export function renderSettings(ctx) {
         <div style="margin-top:10px"><button class="btn sm" data-act="add-crew">${icon("plus")}Add crew</button></div>
       </div></section>
       <section class="card"><div class="card-h"><h3>Your data</h3></div><div class="card-b">
-        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${state.leads.length} records, held in this browser. Export writes a JSON file — keep one somewhere safe.</p>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${state.leads.length} records in the shared database. Export writes a JSON backup file — keep one somewhere safe.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn sm" data-act="export">Export data</button>
+          <button class="btn sm" data-act="export">Export backup</button>
           <button class="btn sm" data-act="import">Import a backup</button>
-          ${state.leads.length ? "" : `<button class="btn sm" data-act="seed">Load example data</button>`}
-          <button class="btn sm danger" data-act="wipe">Delete everything</button>
         </div>
       </div></section>
     </div>

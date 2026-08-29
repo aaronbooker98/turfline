@@ -15,8 +15,7 @@ export function renderAnalytics(ctx) {
   if (!state.leads.length) {
     return `<div class="card"><div class="empty" style="padding:56px 20px">
       <strong>No data to chart yet</strong>
-      Add enquiries or load the example data, then this fills in.
-      <div style="margin-top:18px"><button class="btn" data-act="seed">Load example data</button></div>
+      Add some enquiries and this fills in.
     </div></div>`;
   }
 

@@ -1,7 +1,7 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
 import { esc, todayISO, addDays, mondayOf, setPath, fmtDate } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
-import { defaultState, normalise, newLead, sampleLeads, CREW_COLOURS } from "./state.js";
+import { normalise, newLead, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import * as db from "./db.js";
 import { renderLogin } from "./views/login.js";
@@ -311,7 +311,6 @@ document.addEventListener("click", async (e) => {
       document.querySelector('[data-f="name"]')?.focus();
       break;
     }
-    case "seed": state.leads = sampleLeads(state.rates); save(); render(); break;
     case "leads-clear": ui.leadStage = ui.leadSource = ui.search = ""; render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "week-prev": ui.weekStart = addDays(ui.weekStart, -7); render(); break;
@@ -354,10 +353,6 @@ document.addEventListener("click", async (e) => {
     case "add-grass": state.rates.grasses.push({ name: "New grass", rate: 15 }); save(); render(); break;
     case "export": exportData(); break;
     case "import": document.getElementById("importfile").click(); break;
-    case "wipe":
-      if (!confirm("Delete every record? This cannot be undone.")) break;
-      state.leads = []; ui.openId = null; save(); render();
-      break;
   }
 });
 
