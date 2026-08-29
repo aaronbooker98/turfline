@@ -63,14 +63,22 @@ Loose ends:
 
 **Data:** no back-catalogue to import — start fresh, add leads from now on.
 
-**Website leads (follow-up after Phase 2, not a blocker):**
-- yateartificialgrass.com = WordPress + Divi, built by YZ Designs. Contact form is
-  **WPForms**. Submissions currently only email aaron@yateartificialgrass.com.
-- Plan: build a Supabase function endpoint; YZ Designs adds a WPForms webhook
-  pointing at it so website enquiries auto-create leads (source = "Website form").
-- Needs WPForms Pro/Elite or its Zapier addon for webhooks; if only the basic
-  licence, use a small `wpforms_process_complete` code snippet instead.
-- Until then: office copies enquiry emails into the CRM manually (New enquiry).
+### Phase 3 — auto-capture incoming leads (follow-up, not a blocker)
+
+Two sources to bring in. Build ONE receiving endpoint on Supabase
+(RPC `ingest_lead(payload jsonb)`, security definer, shared-secret check, inserts
+into `leads`), then point both at it.
+
+1. **WhatConverts** (call tracking) — the higher-value one; brings real
+   campaign/keyword attribution. Has a webhook. Aaron controls it (no agency).
+   NEED TO CHECK: WhatConverts plan; does its webhook allow a custom header
+   (for the Supabase apikey)? If not -> Zapier in between, or a tiny Edge Function.
+2. **WPForms** contact form on yateartificialgrass.com (WordPress + Divi, by
+   YZ Designs). Needs YZ Designs (~10 min) to add a webhook. Check first whether
+   their WPForms licence supports webhooks (Pro/Elite or Zapier addon); if not,
+   a `wpforms_process_complete` snippet.
+
+Until then: office adds enquiry emails to the CRM by hand (New enquiry).
 
 **Build outline:**
 1. Create Supabase project; tables for leads, crews, rates/business settings
