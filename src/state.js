@@ -33,10 +33,12 @@ export function normalise(state) {
   return s;
 }
 
+const newId = () => (globalThis.crypto?.randomUUID ? crypto.randomUUID() : uid());
+
 export function newLead(rates) {
   const today = todayISO();
   return {
-    id: uid(),
+    id: newId(),
     name: "", phone: "", email: "", address: "", postcode: "",
     source: "", campaign: "",
     stage: "enquiry", createdAt: today, stageAt: today,

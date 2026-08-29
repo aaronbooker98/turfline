@@ -1,8 +1,10 @@
-// Wiring: view routing, event delegation, persistence.
+// Wiring: auth, view routing, event delegation, and syncing state to Supabase.
 import { esc, todayISO, addDays, mondayOf, setPath, fmtDate } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
-import { defaultState, normalise, newLead, loadLocal, saveLocal, sampleLeads, seededState, CREW_COLOURS } from "./state.js";
+import { defaultState, normalise, newLead, sampleLeads, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
+import * as db from "./db.js";
+import { renderLogin } from "./views/login.js";
 import { renderToday } from "./views/today.js";
 import { renderLeads } from "./views/leads.js";
 import { renderPipeline } from "./views/pipeline.js";
@@ -12,25 +14,34 @@ import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
 
-let state = loadLocal() ?? seededState();
+let state = null;          // null until signed in and loaded
+let lastSaved = null;      // snapshot of the last state pushed to the server
+let unsub = null;          // realtime unsubscribe
+let lastLocalEdit = 0;     // ms — used to ignore our own writes echoing back
 
 const ui = {
   view: "today",
-  openId: null,        // record shown in the drawer
-  expandedJob: null,   // job sheet expanded inline
+  openId: null,
+  expandedJob: null,
   weekStart: mondayOf(todayISO()),
   search: "",
   showClosed: false,
-  leadSort: { col: "created", dir: -1 },  // Leads table sort
+  leadSort: { col: "created", dir: -1 },
   leadStage: "",
   leadSource: "",
-  deviceCrew: localStorage.getItem("turfline-crew") || null, // per-device, not shared
+  deviceCrew: localStorage.getItem("turfline-crew") || null,
   readOnly: false,
-  saveState: "idle"
+  saveState: "idle",
+  role: null,              // 'office' | 'fitters'
+  session: false,
+  authError: "",
+  authBusy: false,
+  bootError: ""
 };
 
 const ctx = { get state() { return state; }, ui };
-const leadById = (id) => state.leads.find((l) => l.id === id);
+const leadById = (id) => state?.leads.find((l) => l.id === id);
+
 const VIEWS = {
   today: { title: "Today", sub: "What needs you, right now", render: renderToday },
   leads: { title: "Leads", sub: "Every enquiry, sortable and searchable", render: renderLeads },
@@ -40,29 +51,112 @@ const VIEWS = {
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
+const OFFICE_NAV = ["today", "leads", "pipeline", "schedule", "analytics", "jobs", "settings"];
+const FITTER_NAV = ["jobs", "schedule"];
+const navFor = () => (ui.role === "fitters" ? FITTER_NAV : OFFICE_NAV);
+
+/* ---------------- boot / auth ---------------- */
+
+async function boot() {
+  try {
+    const session = await db.getSession();
+    if (!session) { ui.session = false; return render(); }
+    ui.role = await db.myRole();
+    if (ui.role !== "office" && ui.role !== "fitters") {
+      await db.signOut();
+      ui.session = false;
+      ui.authError = "This login has no access set up yet.";
+      return render();
+    }
+    ui.session = true;
+    ui.readOnly = ui.role === "fitters";
+    if (!navFor().includes(ui.view)) ui.view = navFor()[0];
+    await reload();
+    wireRealtime();
+    render();
+  } catch (e) {
+    console.error(e);
+    ui.session = false;
+    ui.authError = "Could not reach the server. Check your connection and try again.";
+    render();
+  }
+}
+
+async function reload() {
+  const fresh = ui.role === "fitters" ? await db.loadFittersState() : await db.loadOfficeState();
+  state = ui.role === "fitters" ? fixFitters(fresh) : normalise(fresh);
+  lastSaved = structuredClone(state);
+}
+
+function fixFitters(s) {
+  s.crews ??= []; s.leads ??= [];
+  for (const l of s.leads) { l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= []; }
+  return s;
+}
+
+function wireRealtime() {
+  unsub?.();
+  unsub = null;
+  if (ui.role === "fitters") return; // fitters can't subscribe (RLS); they refresh on focus
+  let t;
+  unsub = db.subscribeOffice(() => {
+    if (Date.now() - lastLocalEdit < 4000) return;   // our own change coming back
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      if (ui.openId || ui.saveState === "pending") return; // don't stomp an edit in progress
+      try { await reload(); render(); } catch (e) { console.error(e); }
+    }, 500);
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !ui.session || ui.role !== "fitters") return;
+  reload().then(render).catch(console.error);
+});
+
+db.onAuthChange((session) => {
+  if (!session && ui.session) {
+    unsub?.(); unsub = null;
+    ui.session = false; ui.role = null; state = null; ui.openId = null;
+    render();
+  }
+});
 
 /* ---------------- persistence ---------------- */
+
 let saveTimer;
 function save() {
+  if (ui.readOnly) return;
+  lastLocalEdit = Date.now();
   ui.saveState = "pending";
   paintSaveChip();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    ui.saveState = saveLocal(state) ? "saved" : "failed";
+  saveTimer = setTimeout(async () => {
+    try {
+      await db.pushState(state, lastSaved);
+      lastSaved = structuredClone(state);
+      ui.saveState = "saved";
+      try { localStorage.setItem("turfline-cache", JSON.stringify(state)); } catch { /* ignore */ }
+    } catch (e) {
+      console.error(e);
+      ui.saveState = "failed";
+    }
     paintSaveChip();
-  }, 500);
+  }, 700);
 }
+
 function paintSaveChip() {
   const el = document.getElementById("savechip");
   if (!el) return;
   const chip = {
     idle: ["dot", "Saved"], pending: ["dot pending", "Saving…"],
-    saved: ["dot", "Saved"], failed: ["dot off", "Could not save — export a backup"]
+    saved: ["dot", "Saved"], failed: ["dot off", "Not saved — check connection"]
   }[ui.saveState];
   el.innerHTML = `<span class="${chip[0]}"></span><span>${esc(chip[1])}</span>`;
 }
 
 /* ---------------- render ---------------- */
+
 function badgeCounts() {
   const today = todayISO();
   let action = 0, overdue = 0, installs = 0;
@@ -81,19 +175,28 @@ function badgeCounts() {
 }
 
 function render() {
+  const root = document.getElementById("app");
+
+  if (!ui.session) {
+    root.innerHTML = renderLogin({ error: ui.authError, busy: ui.authBusy });
+    if (!ui.authBusy) document.getElementById("li-email")?.focus();
+    return;
+  }
+  if (!state) {
+    root.innerHTML = `<div class="login-wrap"><div class="login-card"><p class="login-sub">Loading…</p></div></div>`;
+    return;
+  }
+
   const c = badgeCounts();
-  const nav = [
-    ["today", "Today", c.action, c.overdue > 0],
-    ["leads", "Leads", state.leads.length, false],
-    ["pipeline", "Pipeline", c.pipeline, false],
-    ["schedule", "Schedule", c.installs, false],
-    ["analytics", "Analytics", 0, false],
-    ["jobs", "Job sheets", 0, false],
-    ["settings", "Settings", 0, false]
-  ];
+  const counts = {
+    today: [c.action, c.overdue > 0], leads: [state.leads.length, false],
+    pipeline: [c.pipeline, false], schedule: [c.installs, false],
+    analytics: [0, false], jobs: [0, false], settings: [0, false]
+  };
+  const nav = navFor().map((id) => [id, VIEWS[id].title, ...counts[id]]);
   const v = VIEWS[ui.view];
 
-  document.getElementById("app").innerHTML = `
+  root.innerHTML = `
     <div class="shell">
       <nav class="rail" aria-label="Sections">
         <div class="brand">
@@ -101,7 +204,10 @@ function render() {
           <span class="brand-sub">Lead &amp; job manager</span></div>
         ${nav.map(([id, label, count, hot]) => `<button class="navbtn" data-nav="${id}" aria-current="${ui.view === id}">
           ${icon(id)}<span>${esc(label)}</span>${count > 0 ? `<span class="cnt${hot ? " hot" : ""}">${count}</span>` : ""}</button>`).join("")}
-        <div class="rail-foot"><div class="savechip" id="savechip"></div></div>
+        <div class="rail-foot">
+          <div class="savechip" id="savechip"></div>
+          <button class="btn ghost sm" data-act="signout">${ui.role === "fitters" ? "Fitters" : "Office"} · Sign out</button>
+        </div>
       </nav>
       <div class="main">
         <header class="topbar">
@@ -128,12 +234,30 @@ function refreshDrawerTotals(lead) {
 }
 
 /* ---------------- events ---------------- */
-document.addEventListener("click", (e) => {
+
+document.addEventListener("submit", async (e) => {
+  if (e.target.id !== "loginform") return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  ui.authBusy = true; ui.authError = ""; render();
+  try {
+    await db.signIn(fd.get("email"), fd.get("password"));
+    ui.authBusy = false;
+    await boot();
+  } catch (err) {
+    ui.authBusy = false;
+    ui.authError = /invalid login/i.test(err.message) ? "Wrong email or password." : err.message;
+    render();
+  }
+});
+
+document.addEventListener("click", async (e) => {
+  if (!ui.session || !state) return;
   const hit = (sel) => e.target.closest(sel);
   let el;
 
   if ((el = hit("[data-nav]"))) { ui.view = el.dataset.nav; ui.openId = null; return render(); }
-  if ((el = hit("[data-open]"))) { ui.openId = el.dataset.open; return render(); }
+  if ((el = hit("[data-open]"))) { if (ui.role === "fitters") return; ui.openId = el.dataset.open; return render(); }
   if ((el = hit("[data-toggle]"))) { ui.expandedJob = ui.expandedJob === el.dataset.toggle ? null : el.dataset.toggle; return render(); }
   if ((el = hit("[data-sort]"))) {
     const col = el.dataset.sort;
@@ -154,8 +278,28 @@ document.addEventListener("click", (e) => {
   el = hit("[data-act]");
   if (!el) return;
   const act = el.dataset.act;
-  if (act === "close") { ui.openId = null; return render(); }
-  if (ui.readOnly && act !== "export") return;
+  if (act === "close") {
+    ui.openId = null; render();
+    // after any pending save has flushed, catch up on other people's changes
+    if (ui.role !== "fitters") setTimeout(() => {
+      if (!ui.openId && ui.saveState !== "pending") reload().then(render).catch(() => {});
+    }, 1400);
+    return;
+  }
+  if (act === "signout") {
+    if (!confirm("Sign out of Turfline?")) return;
+    unsub?.(); unsub = null;
+    await db.signOut();
+    state = null; ui.session = false; ui.role = null; ui.openId = null;
+    return render();
+  }
+  if (act === "complete" && ui.role === "fitters") {
+    const id = el.dataset.id;
+    try { await db.markComplete(id); await reload(); render(); }
+    catch (err) { alert("Could not mark complete — " + err.message); }
+    return;
+  }
+  if (ui.readOnly) return;
 
   switch (act) {
     case "new": {
@@ -212,12 +356,13 @@ document.addEventListener("click", (e) => {
     case "import": document.getElementById("importfile").click(); break;
     case "wipe":
       if (!confirm("Delete every record? This cannot be undone.")) break;
-      state = normalise(defaultState()); ui.openId = null; save(); render();
+      state.leads = []; ui.openId = null; save(); render();
       break;
   }
 });
 
 document.addEventListener("input", (e) => {
+  if (!ui.session || !state) return;
   const t = e.target;
   if (t.id === "q") {
     ui.search = t.value;
@@ -310,14 +455,19 @@ function exportData() {
 
 document.getElementById("importfile").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
-  if (!file) return;
+  if (!file || ui.readOnly) return;
   try {
-    state = normalise(JSON.parse(await file.text()));
-    save(); render();
+    const parsed = normalise(JSON.parse(await file.text()));
+    state.business = parsed.business;
+    state.rates = parsed.rates;
+    state.crews = parsed.crews;
+    state.leads = parsed.leads;
+    save();
+    render();
   } catch {
     alert("That file could not be read as a Turfline backup.");
   }
   e.target.value = "";
 });
 
-render();
+boot();

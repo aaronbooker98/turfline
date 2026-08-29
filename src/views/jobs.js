@@ -45,11 +45,11 @@ export function renderJobs(ctx) {
       <ul class="matlist">${materialsFor(l, state.rates, state.business.vat)
         .map((m) => `<li><span>${esc(m.label)}</span><span>${esc(m.qty)}</span></li>`).join("")}</ul>
       ${l.survey?.notes ? `<div class="lbl">Site notes</div><p style="margin:0 0 14px;font-size:13px">${esc(l.survey.notes)}</p>` : ""}
-      ${ui.readOnly ? "" : `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${done ? `<span class="pill good"><span class="pdot"></span>Completed ${fmtDate(l.job.completedAt)}</span>`
                : `<button class="btn primary sm" data-act="complete" data-id="${l.id}">${icon("check")}Mark complete</button>`}
-        <button class="btn sm" data-open="${l.id}">Open full record</button>
-      </div>`}
+        ${ui.role === "fitters" ? "" : `<button class="btn sm" data-open="${l.id}">Open full record</button>`}
+      </div>
     </div>` : "";
 
     return `<article class="jsheet">
