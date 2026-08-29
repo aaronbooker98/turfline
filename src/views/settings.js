@@ -11,6 +11,7 @@ const rateRow = (rates, key, label, help, step = "0.01") => `
 export function renderSettings(ctx) {
   const { state } = ctx;
   const r = state.rates;
+  const b = state.business;
   return `<div class="grid2" style="align-items:start">
     <section class="card">
       <div class="card-h"><h3>Pricing</h3><span class="n">used by every quote</span></div>
@@ -32,11 +33,22 @@ export function renderSettings(ctx) {
       </div>
     </section>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <section class="card"><div class="card-h"><h3>Business</h3></div><div class="card-b">
-        <div class="field"><label class="lbl" for="bizname">Trading name</label>
-          <input class="inp" id="bizname" data-biz="name" value="${esc(state.business.name)}"></div>
-        <label style="display:flex;gap:8px;align-items:center;font-size:13px">
-          <input type="checkbox" data-biz="vat"${state.business.vat ? " checked" : ""}> VAT registered — add VAT to quotes</label>
+      <section class="card"><div class="card-h"><h3>Business</h3><span class="n">shown on quotes</span></div><div class="card-b">
+        <div class="field"><label class="lbl">Trading name</label>
+          <input class="inp" data-biz="name" value="${esc(b.name ?? "")}"></div>
+        <div class="grid2">
+          <div class="field"><label class="lbl">Phone</label><input class="inp" data-biz="phone" value="${esc(b.phone ?? "")}"></div>
+          <div class="field"><label class="lbl">Email</label><input class="inp" type="email" data-biz="email" value="${esc(b.email ?? "")}"></div>
+        </div>
+        <div class="field"><label class="lbl">Address</label><input class="inp" data-biz="address" value="${esc(b.address ?? "")}" placeholder="Unit 1, … , Yate"></div>
+        <div class="grid2">
+          <div class="field"><label class="lbl">Company / VAT reg no.</label><input class="inp" data-biz="regNo" value="${esc(b.regNo ?? "")}"></div>
+          <div class="field"><label class="lbl">Quote valid (days)</label><input class="inp num" type="number" step="1" data-biz="quoteValidDays" value="${esc(b.quoteValidDays ?? 30)}"></div>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:2px 0 12px">
+          <input type="checkbox" data-biz="vat"${b.vat ? " checked" : ""}> VAT registered — add VAT to quotes</label>
+        <div class="field"><label class="lbl">Quote terms &amp; conditions</label>
+          <textarea class="inp" data-biz="quoteTerms" rows="4">${esc(b.quoteTerms ?? "")}</textarea></div>
       </div></section>
       <section class="card"><div class="card-h"><h3>Crews</h3><span class="n">${state.crews.length}</span></div><div class="card-b">
         ${state.crews.map((c, i) => `<div class="crewrow">

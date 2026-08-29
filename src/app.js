@@ -13,6 +13,7 @@ import { renderAnalytics } from "./views/analytics.js";
 import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
+import { buildQuoteDoc } from "./views/quote-doc.js";
 
 let state = null;          // null until signed in and loaded
 let lastSaved = null;      // snapshot of the last state pushed to the server
@@ -352,6 +353,27 @@ document.addEventListener("click", async (e) => {
       break;
     }
     case "add-grass": state.rates.grasses.push({ name: "New grass", rate: 15 }); save(); render(); break;
+    case "print-quote": {
+      const l = leadById(el.dataset.id);
+      if (!l) break;
+      l.quote ??= {};
+      if (!l.quote.ref) {
+        const n = state.leads.filter((x) => x.quote?.ref).length + 1;
+        l.quote.ref = "YAG-" + String(n).padStart(4, "0");
+      }
+      l.quote.docDate = todayISO();
+      logActivity(l, `Quote ${l.quote.ref} produced`);
+      save();
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.write(buildQuoteDoc(l, state, { logoUrl: location.origin + "/src/assets/yate-logo.png" }));
+        w.document.close();
+      } else {
+        alert("Allow pop-ups for this site to open the quote.");
+      }
+      render();
+      break;
+    }
     case "export": exportData(); break;
     case "import": document.getElementById("importfile").click(); break;
   }
@@ -387,6 +409,7 @@ document.addEventListener("input", (e) => {
     setPath(lead, t.dataset.f, value);
     if (t.dataset.f === "job.startDate" && value && !lead.job.days) lead.job.days = estimateDays(lead.survey?.areaM2, state.rates);
     save();
+    if (t.dataset.f === "lostReason" || (t.dataset.f.startsWith("payment.") && t.type === "checkbox")) { render(); return; }
     refreshDrawerTotals(lead);
     return;
   }

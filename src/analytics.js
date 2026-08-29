@@ -2,7 +2,7 @@
 // No DOM and no module-level state: everything here is unit tested in
 // test/analytics.test.js and can be run without a browser.
 import { num, todayISO, dayDiff, parseISO } from "./util.js";
-import { quoteFor, isCold } from "./model.js";
+import { quoteFor, isCold, paymentState } from "./model.js";
 
 export const WON_STAGES = ["won", "installed"];
 export const OPEN_STAGES = ["enquiry", "survey", "surveyed", "quoted"];
@@ -106,6 +106,26 @@ export function bySource(leads, state) {
     .sort((a, b) => b.revenue - a.revenue || b.leads - a.leads);
 }
 
+/** Count of lost deals by the reason given (unlabelled ones grouped as "Not recorded"). */
+export function lostReasons(leads) {
+  const map = new Map();
+  for (const l of leads) {
+    if (l.stage !== "lost") continue;
+    const r = l.lostReason || "Not recorded";
+    map.set(r, (map.get(r) ?? 0) + 1);
+  }
+  return [...map.entries()]
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Money still owed across won / installed jobs. */
+export function moneyOwed(state) {
+  return state.leads
+    .filter((l) => ["won", "installed"].includes(l.stage))
+    .reduce((s, l) => s + paymentState(l, quoteFor(l, state.rates, state.business.vat).total).outstanding, 0);
+}
+
 /** Mean calendar days from a lead being created to it closing won. */
 export function avgDaysToClose(leads) {
   const spans = leads
@@ -144,8 +164,10 @@ export function overview(state, today = todayISO()) {
     avgDaysToClose: avgDaysToClose(leads),
     coldQuotes: cold.length,
     coldValue: sum(cold),
+    moneyOwed: moneyOwed(state),
     funnel: funnel(leads),
     bySource: bySource(leads, state),
-    byMonth: byMonth(leads, state, 6, today)
+    byMonth: byMonth(leads, state, 6, today),
+    lostReasons: lostReasons(leads)
   };
 }

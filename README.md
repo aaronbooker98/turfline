@@ -45,14 +45,24 @@ a number on the Analytics screen is worked out, change it there and add a test.
 
 - **Today** — overdue and due-today follow-ups, plus installs in the next week.
   Quotes with no movement for 14 days are flagged cold.
-- **Leads** — every enquiry in one table: search, filter by stage or source, sort any
-  column. Click a row to open the full record.
-- **Pipeline** — board by stage with values, source and search.
+- **Leads** — every enquiry in one table: search, filter by stage / source / how it
+  came in (phone / web / manual), sort any column. Click a row for the full record.
+- **Pipeline** — board by stage; drag a card between columns to move it along.
 - **Schedule** — crews across a week. Two jobs on one crew on one day turn red.
-- **Analytics** — the whole business at a glance: enquiry → won funnel, win rate,
-  average job value and days to close, revenue by month, and which lead sources pay.
+- **Analytics** — enquiry → won funnel, win rate, average job value and days to close,
+  revenue by month, lead-source performance, why deals are lost, money still owed.
 - **Job sheets** — phone view for fitters: address, spec, materials to load, mark complete.
-- **Settings** — rates that drive every quote, crews, export/import.
+- **Settings** — rates, business details and quote terms, crews, export/import.
+
+The record drawer also has: a printable **quote** (own window → Print / Save PDF),
+**deposit / balance** tracking on won jobs, a **lost-reason** picker, and a
+**possible-duplicate** nudge when the phone or postcode matches another record.
+
+## Logins
+
+Two shared logins via Supabase Auth. `office@…` sees everything; anything else is a
+fitter — job sheets and a read-only schedule only, no pricing or pipeline, enforced
+by row-level security. See `SUPABASE-SETUP.md`.
 
 ## How pricing works
 
@@ -72,13 +82,20 @@ the starting point for a fresh install.
 
 ## Data
 
-Everything lives in `localStorage` in the browser that entered it. That is fine for one
-or two people on one machine and not fine for a crew spread across phones — which is
-the next thing to fix. Export a backup from Settings regularly until there's a server.
+Leads, crews and settings live in Supabase (Postgres). Each lead is one row with the
+record as `jsonb`, so the shape matches what the app already used. Office devices get
+live updates; fitters refresh on focus. `src/db.js` is the only file that talks to the
+server. Export a JSON backup from Settings now and then anyway.
+
+Incoming calls are captured automatically: WhatConverts → the `supabase/functions/ingest`
+Edge Function → a new lead tagged "Phone call" with its ad attribution. The website
+contact form (WPForms) can point at the same endpoint.
 
 ## Roadmap
 
-- [ ] Quote PDF, emailed from the record
-- [ ] A backend so office and site see the same data (Postgres + a small API)
+- [x] Quote PDF from the record
+- [x] A backend so office and site see the same data (Supabase)
+- [x] Auto-capture leads from call tracking / the website form
+- [ ] Email the quote straight from the record
 - [ ] Photo upload against a job
-- [ ] Import from Zoho CRM
+- [ ] Import historical customers

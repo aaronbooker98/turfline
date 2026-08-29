@@ -22,7 +22,40 @@ export const CHANNELS = [
 ];
 export const channelLabel = (id) => (CHANNELS.find((c) => c.id === id) ?? CHANNELS[0]).label;
 
+export const LOST_REASONS = ["Price", "Timing", "Went elsewhere", "No response", "Changed their mind", "Other"];
+
 export const stage = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0];
+
+/** Other records that might be the same enquiry — same phone, or same
+ *  postcode + name. Used for a non-blocking "possible duplicate" nudge. */
+export function dedupeMatches(lead, leads) {
+  const digits = (s) => String(s || "").replace(/\D/g, "");
+  const pc = (s) => String(s || "").replace(/\s+/g, "").toUpperCase();
+  const myPhone = digits(lead.phone);
+  const myPc = pc(lead.postcode);
+  const myName = String(lead.name || "").trim().toLowerCase();
+  return leads.filter((l) => {
+    if (l.id === lead.id) return false;
+    if (myPhone.length >= 6 && digits(l.phone).endsWith(myPhone.slice(-9))) return true;
+    if (myPc.length >= 5 && pc(l.postcode) === myPc && myName && String(l.name || "").trim().toLowerCase() === myName) return true;
+    return false;
+  });
+}
+
+/** Deposit / balance position for a won job priced at `total`. */
+export function paymentState(lead, total) {
+  const p = lead.payment ?? {};
+  const deposit = Math.min(num(p.deposit, 0), total || num(p.deposit, 0));
+  const balance = Math.max(0, (total || 0) - deposit);
+  const received = (p.depositPaid ? deposit : 0) + (p.balancePaid ? balance : 0);
+  return {
+    deposit, balance, received,
+    depositPaid: !!p.depositPaid,
+    balancePaid: !!p.balancePaid,
+    outstanding: Math.max(0, (total || 0) - received),
+    settled: !!p.balancePaid || ((total || 0) > 0 && received >= (total || 0) - 0.5)
+  };
+}
 
 export const DEFAULT_RATES = {
   grasses: [

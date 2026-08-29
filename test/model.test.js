@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteFor, estimateDays, materialsFor, actionState, isCold, setStage, jobsOn, DEFAULT_RATES } from "../src/model.js";
+import { quoteFor, estimateDays, materialsFor, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
 const rates = structuredClone(DEFAULT_RATES);
@@ -95,6 +95,28 @@ test("winning a job clears the follow-up, installing sets an aftercare call", ()
   const installed = lead({}, { stage: "won" });
   setStage(installed, "installed", t);
   assert.equal(installed.nextAction, addDays(t, 14));
+});
+
+test("dedupeMatches flags same phone or same postcode+name, never itself", () => {
+  const all = [
+    { id: "a", name: "Jo Bloggs", phone: "07700 900 123", postcode: "BS37 5DL" },
+    { id: "b", name: "Someone Else", phone: "0117 111 2222", postcode: "BS1 1AA" },
+    { id: "c", name: "Jo Bloggs", phone: "", postcode: "bs37 5dl" }
+  ];
+  assert.deepEqual(dedupeMatches({ id: "x", phone: "07700900123" }, all).map((l) => l.id), ["a"]);
+  assert.deepEqual(dedupeMatches({ id: "x", name: "jo bloggs", postcode: "BS375DL" }, all).map((l) => l.id).sort(), ["a", "c"]);
+  assert.deepEqual(dedupeMatches({ id: "a", phone: "07700900123", name: "Jo Bloggs", postcode: "BS37 5DL" }, all).map((l) => l.id), ["c"]);
+  assert.deepEqual(dedupeMatches({ id: "x", phone: "123" }, all), []); // too short to match
+});
+
+test("paymentState tracks deposit, balance and what's outstanding", () => {
+  const total = 4000;
+  assert.equal(paymentState({ payment: {} }, total).outstanding, 4000);
+  assert.equal(paymentState({ payment: { deposit: 1000, depositPaid: true } }, total).outstanding, 3000);
+  const done = paymentState({ payment: { deposit: 1000, depositPaid: true, balancePaid: true } }, total);
+  assert.equal(done.outstanding, 0);
+  assert.equal(done.settled, true);
+  assert.equal(paymentState({ payment: { deposit: 9999 } }, total).balance, 0); // deposit capped at total
 });
 
 test("two jobs on one crew on one day is a clash", () => {

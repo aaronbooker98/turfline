@@ -30,6 +30,7 @@ export function renderAnalytics(ctx) {
       ${tile(pct(o.winRate.rate), "Win rate", `${o.winRate.won} won / ${o.winRate.lost} lost`)}
       ${tile(money(o.avgDealSize), "Average job", o.avgDaysToClose != null ? `${o.avgDaysToClose} days to close` : "—")}
       ${tile(money(o.wonThisMonthValue), "Won this month", `${o.wonThisMonthCount} job${o.wonThisMonthCount === 1 ? "" : "s"}`)}
+      ${tile(money(o.moneyOwed), "Money owed", "across won & installed jobs", o.moneyOwed > 0 ? "alert" : "")}
       ${tile(o.coldQuotes, "Cold quotes", `${money(o.coldValue)} going stale`, o.coldQuotes ? "alert" : "")}
     </div>
 
@@ -61,6 +62,19 @@ export function renderAnalytics(ctx) {
           </div>
         </div>
       </section>
+
+      ${o.lostReasons.length ? `<section class="card an-wide">
+        <div class="card-h"><h3>Why deals are lost</h3><span class="n">${o.winRate.lost} lost</span></div>
+        <div class="card-b">
+          <div class="lostbars">${(() => {
+            const max = Math.max(1, ...o.lostReasons.map((r) => r.count));
+            return o.lostReasons.map((r) => `<div class="lostrow">
+              <span class="ll">${esc(r.reason)}</span>
+              <span class="lt"><span style="width:${Math.round((r.count / max) * 100)}%"></span></span>
+              <span class="lc">${r.count}</span></div>`).join("");
+          })()}</div>
+        </div>
+      </section>` : ""}
 
       <section class="card an-wide">
         <div class="card-h"><h3>Lead sources</h3><span class="n">${o.bySource.length} channels</span></div>

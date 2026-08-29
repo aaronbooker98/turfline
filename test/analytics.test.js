@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  furthestStage, funnel, winRate, byMonth, bySource, sourceKey, avgDaysToClose, overview
+  furthestStage, funnel, winRate, byMonth, bySource, sourceKey, avgDaysToClose,
+  lostReasons, moneyOwed, overview
 } from "../src/analytics.js";
 import { DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
@@ -91,6 +92,32 @@ test("bySource ranks channels by revenue and reports win rate", () => {
   assert.equal(rows[0].winRate, 0.5);
   assert.equal(rows[1].source, "Leaflet");
   assert.equal(rows[1].winRate, 0);
+});
+
+test("lostReasons counts lost deals by reason, biggest first", () => {
+  const rows = lostReasons([
+    lead({ stage: "lost", ...{ } }), // no reason
+    { ...lead({ stage: "lost" }), lostReason: "Price" },
+    { ...lead({ stage: "lost" }), lostReason: "Price" },
+    { ...lead({ stage: "lost" }), lostReason: "Timing" },
+    { ...lead({ stage: "won" }), lostReason: "Price" } // not lost, ignored
+  ]);
+  assert.equal(rows[0].reason, "Price");
+  assert.equal(rows[0].count, 2);
+  assert.ok(rows.some((r) => r.reason === "Not recorded" && r.count === 1));
+});
+
+test("moneyOwed sums the outstanding balance on won/installed jobs", () => {
+  const s = state([
+    { ...lead({ stage: "won", survey: { areaM2: 50 } }), payment: {} },
+    { ...lead({ stage: "installed", survey: { areaM2: 50 } }), payment: { deposit: 100000, depositPaid: true, balancePaid: true } },
+    { ...lead({ stage: "quoted", survey: { areaM2: 50 } }), payment: {} } // not won, ignored
+  ]);
+  const owed = moneyOwed(s);
+  assert.ok(owed > 0);           // the first job is unpaid
+  // second job is marked fully paid, so only the first contributes
+  const firstTotal = overview(s).wonValue; // won+installed value
+  assert.ok(owed < firstTotal);
 });
 
 test("overview pulls the headline numbers together", () => {
