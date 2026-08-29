@@ -48,13 +48,18 @@ Deno.serve(async (req) => {
   const medium = pick("lead_medium", "medium").toLowerCase();
   const keyword = pick("lead_keyword", "keyword");
   const landing = pick("landing_url", "landing_page_url", "landing_page");
-  const sourceLabel = (() => {
+  const channelWord = (() => {
     const s = src ? src[0].toUpperCase() + src.slice(1) : "";
-    if (!s) return channel === "phone" ? "Phone call" : "Website";
+    if (!s) return "";
     if (["cpc", "ppc", "paid", "paidsearch"].includes(medium)) return `${s} Ads`;
     if (medium === "organic") return `${s} (organic)`;
     return s;
   })();
+  // Source = where the lead came through (WhatConverts). The marketing detail
+  // (Google Ads, keyword, campaign) goes in the Campaign field so nothing is lost.
+  const source = "WhatConverts";
+  const campaign = [channelWord, pick("lead_campaign", "campaign"), keyword]
+    .filter(Boolean).join(" · ");
 
   const extId = "wc:" + (pick("lead_id", "leadId", "id") || crypto.randomUUID());
   const now = new Date().toISOString();
@@ -73,8 +78,8 @@ Deno.serve(async (req) => {
     email: pick("email_address", "contact_email_address", "contact_email", "email"),
     address: [pick("contact_city"), pick("contact_state")].filter(Boolean).join(", "),
     postcode: pick("contact_zip", "contact_postcode", "postal_code", "postcode"),
-    source: sourceLabel,
-    campaign: pick("lead_campaign", "campaign"),
+    source,
+    campaign,
     channel,
     stage: "enquiry",
     createdAt: todayISO(),
