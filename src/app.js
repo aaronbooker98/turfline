@@ -258,6 +258,45 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && ui.openId) { ui.openId = null; render(); }
 });
 
+/* ---------------- pipeline drag-and-drop ---------------- */
+let dragLeadId = null;
+const clearDropHints = () => document.querySelectorAll(".col.drag-over").forEach((c) => c.classList.remove("drag-over"));
+
+document.addEventListener("dragstart", (e) => {
+  const card = e.target.closest("[data-lead]");
+  if (!card || ui.readOnly) return;
+  dragLeadId = card.dataset.lead;
+  card.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", dragLeadId);
+});
+document.addEventListener("dragend", () => {
+  document.querySelectorAll(".lcard.dragging").forEach((c) => c.classList.remove("dragging"));
+  clearDropHints();
+  dragLeadId = null;
+});
+document.addEventListener("dragover", (e) => {
+  if (dragLeadId == null) return;
+  const col = e.target.closest("[data-drop-stage]");
+  if (!col) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  if (!col.classList.contains("drag-over")) { clearDropHints(); col.classList.add("drag-over"); }
+});
+document.addEventListener("drop", (e) => {
+  const col = e.target.closest("[data-drop-stage]");
+  clearDropHints();
+  if (!col) return;
+  e.preventDefault();
+  const lead = leadById(dragLeadId || e.dataTransfer.getData("text/plain"));
+  const target = col.dataset.dropStage;
+  dragLeadId = null;
+  if (!lead || ui.readOnly || lead.stage === target) return;
+  setStage(lead, target);
+  save();
+  render();
+});
+
 /* ---------------- backup ---------------- */
 function exportData() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
