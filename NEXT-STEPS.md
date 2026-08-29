@@ -30,14 +30,14 @@ The live site rebuilds itself about a minute later.
 
 ## Still to do
 
-### Phase 1 — custom web address  (IN PROGRESS)
-`crm.yateartificialgrass.com` pointing at the free GitHub site.
+### Phase 1 — custom web address  (DONE)
+Live at https://crm.yateartificialgrass.com/ with HTTPS.
 - [x] DNS CNAME `crm` -> `aaronbooker98.github.io` added in Squarespace
       (domain is registered "through Google", now managed at account.squarespace.com;
       website + Google email untouched)
-- [x] `CNAME` file added to the repo
-- [ ] Push, then wait for GitHub to issue the HTTPS certificate (~15 min)
-- [ ] Tick "Enforce HTTPS" in Settings -> Pages
+- [x] `CNAME` file in the repo
+- [x] GitHub issued the HTTPS certificate
+- [ ] Final tick: "Enforce HTTPS" in Settings -> Pages (one checkbox)
 
 ### Phase 2 — shared login + database
 Right now each device stores its own data. To have office + fitters on the same
