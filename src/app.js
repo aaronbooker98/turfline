@@ -9,6 +9,7 @@ import { renderToday } from "./views/today.js";
 import { renderLeads } from "./views/leads.js";
 import { renderPipeline } from "./views/pipeline.js";
 import { renderSchedule } from "./views/schedule.js";
+import { renderSurveys } from "./views/surveys.js";
 import { renderAnalytics } from "./views/analytics.js";
 import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
@@ -24,6 +25,14 @@ let unsub = null;          // realtime unsubscribe
 let lastLocalEdit = 0;     // ms — used to ignore our own writes echoing back
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+function addTodo(text) {
+  const s = (text || "").trim();
+  if (!s || !state) return;
+  (state.business.todos ??= []).unshift({ id: crypto.randomUUID(), text: s, done: false, createdAt: new Date().toISOString() });
+  save(); render();
+  document.getElementById("todoinput")?.focus();
+}
 
 /** Open the user's email client with recipient / subject / body pre-filled. */
 function openMail(to, subject, body) {
@@ -71,13 +80,14 @@ const VIEWS = {
   leads: { title: "Leads", sub: "Every enquiry, sortable and searchable", render: renderLeads },
   pipeline: { title: "Pipeline", sub: "Every live enquiry by stage", render: renderPipeline },
   schedule: { title: "Schedule", sub: "Crews, jobs and clashes", render: renderSchedule },
+  surveys: { title: "Surveys", sub: "Your survey diary — bookings to measure up", render: renderSurveys },
   analytics: { title: "Analytics", sub: "Funnel, win rate and where the money comes from", render: renderAnalytics },
   estimator: { title: "Quote estimator", sub: "A quick ballpark price — no record needed", render: renderEstimator },
   invoices: { title: "Invoices", sub: "Raise and print invoices", render: renderInvoices },
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
-const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "schedule", "analytics", "invoices", "jobs", "settings"];
+const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "surveys", "schedule", "analytics", "invoices", "jobs", "settings"];
 const FITTER_NAV = ["jobs", "schedule"];
 const navFor = () => (ui.role === "fitters" ? FITTER_NAV : OFFICE_NAV);
 
@@ -116,6 +126,7 @@ async function reload() {
 
 function fixFitters(s) {
   s.crews ??= []; s.leads ??= []; s.invoices ??= [];
+  s.business = s.business || {}; s.business.todos ??= [];
   for (const l of s.leads) { l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= []; }
   return s;
 }
@@ -185,7 +196,7 @@ function paintSaveChip() {
 
 function badgeCounts() {
   const today = todayISO();
-  let action = 0, overdue = 0, installs = 0;
+  let action = 0, overdue = 0, installs = 0, surveysDue = 0, surveysOverdue = 0;
   for (const l of state.leads) {
     if (l.stage === "lost") continue;
     const k = actionState(l).kind;
@@ -196,8 +207,13 @@ function badgeCounts() {
       const d = (new Date(start) - new Date(today)) / 86400000;
       if (d >= 0 && d <= 7) installs++;
     }
+    if (l.survey?.bookedFor && ["enquiry", "survey"].includes(l.stage)) {
+      const day = String(l.survey.bookedFor).slice(0, 10);
+      if (day < today) { surveysOverdue++; surveysDue++; }
+      else if (day <= addDays(today, 7)) surveysDue++;
+    }
   }
-  return { action, overdue, installs, pipeline: state.leads.filter((l) => !["installed", "lost"].includes(l.stage)).length };
+  return { action, overdue, installs, surveysDue, surveysOverdue, pipeline: state.leads.filter((l) => !["installed", "lost"].includes(l.stage)).length };
 }
 
 function render() {
@@ -217,6 +233,7 @@ function render() {
   const counts = {
     today: [c.action, c.overdue > 0], leads: [state.leads.length, false],
     pipeline: [c.pipeline, false], schedule: [c.installs, false],
+    surveys: [c.surveysDue, c.surveysOverdue > 0],
     analytics: [0, false], estimator: [0, false], jobs: [0, false], settings: [0, false],
     invoices: [state.invoices.filter((i) => !i.paid).length, false]
   };
@@ -475,6 +492,19 @@ document.addEventListener("click", async (e) => {
       break;
     }
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
+    case "add-todo": {
+      const inp = document.getElementById("todoinput");
+      addTodo(inp?.value);
+      break;
+    }
+    case "del-todo":
+      state.business.todos = (state.business.todos ?? []).filter((x) => x.id !== el.dataset.id);
+      save(); render();
+      break;
+    case "clear-todos-done":
+      state.business.todos = (state.business.todos ?? []).filter((x) => !x.done);
+      save(); render();
+      break;
     case "done-action": {
       if (!lead) break;
       logActivity(lead, `Done: ${lead.nextNote || "follow-up"}`);
@@ -558,6 +588,12 @@ document.addEventListener("input", (e) => {
   }
   if (ui.readOnly) return;
 
+  if (t.dataset.todo !== undefined) {
+    const x = (state.business.todos ?? []).find((y) => y.id === t.dataset.todo);
+    if (x) { x.done = t.checked; x.doneAt = t.checked ? todayISO() : null; save(); render(); }
+    return;
+  }
+
   if (t.id === "inv-fromjob") {
     const inv = state.invoices.find((i) => i.id === ui.invoiceEdit);
     const lead = t.value ? leadById(t.value) : null;
@@ -597,6 +633,7 @@ document.addEventListener("input", (e) => {
     if (t.dataset.f === "nextAction" && !value) value = null;
     setPath(lead, t.dataset.f, value);
     if (t.dataset.f === "job.startDate" && value && !lead.job.days) lead.job.days = estimateDays(lead.survey?.areaM2, state.rates);
+    if (t.dataset.f === "survey.bookedFor" && value && lead.stage === "enquiry") { setStage(lead, "survey"); save(); render(); return; }
     save();
     if (t.dataset.f === "lostReason" || (t.dataset.f.startsWith("payment.") && t.type === "checkbox")) { render(); return; }
     refreshDrawerTotals(lead);
@@ -611,6 +648,7 @@ document.addEventListener("input", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && ui.openId) { ui.openId = null; render(); }
+  if (e.key === "Enter" && e.target.id === "todoinput") { e.preventDefault(); addTodo(e.target.value); }
 });
 
 /* ---------------- pipeline drag-and-drop ---------------- */

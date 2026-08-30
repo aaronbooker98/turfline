@@ -3,6 +3,26 @@ import { esc, money, num, todayISO, dayDiff, fmtDate, fmtDateLong } from "../uti
 import { quoteFor, actionState, isCold, stage, invoiceTotals } from "../model.js";
 import { icon } from "../icons.js";
 
+function todoCard(state) {
+  const todos = state.business.todos ?? [];
+  const open = todos.filter((x) => !x.done);
+  const done = todos.filter((x) => x.done);
+  const item = (x) => `<label class="todo${x.done ? " done" : ""}">
+    <input type="checkbox" data-todo="${x.id}"${x.done ? " checked" : ""}>
+    <span>${esc(x.text)}</span>
+    <button class="todo-x" data-act="del-todo" data-id="${x.id}" aria-label="Delete">${icon("x")}</button>
+  </label>`;
+  return `<section class="card"><div class="card-h"><h3>To-do</h3><span class="n">${open.length}</span></div>
+    <div class="card-b">
+      <div class="todo-add">
+        <input class="inp" id="todoinput" placeholder="Add a task and press Enter" autocomplete="off">
+        <button class="btn sm" data-act="add-todo">${icon("plus")}</button>
+      </div>
+      ${open.length ? open.map(item).join("") : `<p class="todo-empty">Nothing on the list.</p>`}
+      ${done.length ? `<div class="todo-done-h">Done<button class="btn sm ghost" data-act="clear-todos-done">Clear ${done.length}</button></div>${done.map(item).join("")}` : ""}
+    </div></section>`;
+}
+
 function invoiceRow(inv, total, days) {
   const overdue = days > 7;
   return `<div class="qrow" data-invoice="${inv.id}">
@@ -99,6 +119,7 @@ export function renderToday(ctx) {
           <div class="card-b flush">${soon.length ? `<div class="queue">${soon.slice(0, 6).map((l) => chaseRow(l, value(l))).join("")}</div>` : `<div class="empty">Nothing scheduled in the next week.</div>`}</div></section>
         ${unpaid.length ? `<section class="card"><div class="card-h"><h3>Unpaid invoices</h3><span class="n">${money(unpaidTotal)}</span></div>
           <div class="card-b flush"><div class="queue">${unpaid.map((u) => invoiceRow(u.inv, u.total, u.days)).join("")}</div></div></section>` : ""}
+        ${todoCard(state)}
       </div>
       <section class="card"><div class="card-h"><h3>Installs</h3><span class="n">next 7 days</span></div>
         <div class="card-b flush">${installs.length ? `<div class="queue">${installs.map(installRow).join("")}</div>` : `<div class="empty">No installs booked in the next week.</div>`}</div></section>

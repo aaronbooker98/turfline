@@ -17,7 +17,8 @@ export function defaultState() {
       vatNo: "460380900",
       invoiceTerms: "PAYMENT DUE ON RECEIPT OF INVOICE",
       invoiceFoot: "OR CASH + CHEQUE ACCEPTED",
-      nextInvoiceNo: 261
+      nextInvoiceNo: 261,
+      todos: []
     },
     rates: structuredClone(DEFAULT_RATES),
     crews: [
@@ -34,6 +35,7 @@ export function normalise(state) {
   const base = defaultState();
   const s = { ...base, ...(state ?? {}) };
   s.business = { ...base.business, ...(s.business ?? {}) };
+  if (!Array.isArray(s.business.todos)) s.business.todos = [];
   s.rates = { ...base.rates, ...(s.rates ?? {}) };
   if (!Array.isArray(s.rates.grasses) || !s.rates.grasses.length) s.rates.grasses = base.rates.grasses;
   if (!Array.isArray(s.crews)) s.crews = base.crews;

@@ -255,6 +255,18 @@ export function setStage(lead, stageId, today = todayISO()) {
   logActivity(lead, `Stage: ${from} → ${to.label}`);
 }
 
+/** Leads with a survey appointment that hasn't been written up yet, soonest first.
+ *  `overdue` = the appointment time has passed and they're still not surveyed. */
+export function bookedSurveys(leads, today = todayISO()) {
+  return leads
+    .filter((l) => l.survey?.bookedFor && ["enquiry", "survey"].includes(l.stage))
+    .map((l) => {
+      const day = String(l.survey.bookedFor).slice(0, 10);
+      return { lead: l, when: l.survey.bookedFor, day, overdue: day < today };
+    })
+    .sort((a, b) => (a.when < b.when ? -1 : a.when > b.when ? 1 : 0));
+}
+
 /** Jobs occupying a given crew on a given day — more than one is a clash. */
 export function jobsOn(leads, crewId, dayISO) {
   return leads.filter((l) => {

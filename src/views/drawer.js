@@ -111,6 +111,11 @@ export function renderDrawer(ctx, lead) {
 
     <div class="sect"><h4>Survey</h4>
       <div class="grid2">
+        <div class="field"><label class="lbl">Survey booked for</label>
+          <input class="inp" type="datetime-local" data-f="survey.bookedFor" value="${esc(lead.survey.bookedFor ?? "")}"${dis}></div>
+        ${field("Booking note", "survey.bookedNote", lead.survey.bookedNote, "text", 'placeholder="gate code, back garden…"')}
+      </div>
+      <div class="grid2">
         ${field("Area (m²)", "survey.areaM2", lead.survey.areaM2, "number", 'step="0.5" placeholder="0"')}
         <div class="field"><label class="lbl">Grass</label>
           <select class="inp" data-f="survey.grassSpec"${dis}>${state.rates.grasses.map((g) =>

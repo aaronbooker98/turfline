@@ -20,6 +20,11 @@ The live site rebuilds itself about a minute later.
 - **Leads** — sortable/filterable table of every enquiry
 - **Pipeline** — board by stage; drag a card between columns to move it along
 - **Schedule** — Week grid (default) or Month calendar, toggle at the top, clash detection
+- **Surveys** — survey diary. Booked appointments (leads with a `survey.bookedFor`
+  date, stage enquiry/survey), grouped by day, overdue ones flagged "write up".
+  Set the date in a record's Survey section — stage auto-moves to "Survey booked".
+- **To-do list** — card on the Today screen. Add a task (Enter), tick it off,
+  clear done. Stored in `business.todos`, synced between office devices.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.

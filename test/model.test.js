@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, invoiceTotals, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
+import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, invoiceTotals, bookedSurveys, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
 const rates = structuredClone(DEFAULT_RATES);
@@ -187,6 +187,21 @@ test("paymentState tracks deposit, balance and what's outstanding", () => {
   assert.equal(done.outstanding, 0);
   assert.equal(done.settled, true);
   assert.equal(paymentState({ payment: { deposit: 9999 } }, total).balance, 0); // deposit capped at total
+});
+
+test("bookedSurveys lists un-surveyed appointments, soonest first, flagging overdue", () => {
+  const t = "2026-09-10";
+  const mk = (id, stg, when) => ({ id, stage: stg, survey: when ? { bookedFor: when } : {} });
+  const rows = bookedSurveys([
+    mk("a", "survey", "2026-09-12T09:00"),
+    mk("b", "survey", "2026-09-08T14:00"),   // overdue
+    mk("c", "enquiry", "2026-09-11"),
+    mk("d", "quoted", "2026-09-13"),         // past the survey — excluded
+    mk("e", "survey", null)                  // no date — excluded
+  ], t);
+  assert.deepEqual(rows.map((r) => r.lead.id), ["b", "c", "a"]);
+  assert.equal(rows[0].overdue, true);
+  assert.equal(rows[1].overdue, false);
 });
 
 test("two jobs on one crew on one day is a clash", () => {
