@@ -41,6 +41,14 @@ export const mondayOf = (s) => {
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return iso(d);
 };
+export const firstOfMonth = (s) => {
+  const d = parseISO(s) ?? new Date();
+  return iso(new Date(d.getFullYear(), d.getMonth(), 1));
+};
+export const addMonths = (s, n) => {
+  const d = parseISO(s) ?? new Date();
+  return iso(new Date(d.getFullYear(), d.getMonth() + n, 1));
+};
 
 /* ---- formatting ---- */
 export const fmtDate = (s) =>

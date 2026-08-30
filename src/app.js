@@ -1,5 +1,5 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
-import { esc, todayISO, addDays, mondayOf, setPath, fmtDate } from "./util.js";
+import { esc, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
 import { normalise, newLead, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
@@ -25,6 +25,8 @@ const ui = {
   openId: null,
   expandedJob: null,
   weekStart: mondayOf(todayISO()),
+  schedView: "month",
+  monthStart: firstOfMonth(todayISO()),
   search: "",
   showClosed: false,
   leadSort: { col: "created", dir: -1 },
@@ -301,6 +303,19 @@ document.addEventListener("click", async (e) => {
     catch (err) { alert("Could not mark complete — " + err.message); }
     return;
   }
+
+  // view-only navigation — safe for read-only (fitter) users too
+  const navActs = {
+    "week-prev": () => (ui.weekStart = addDays(ui.weekStart, -7)),
+    "week-next": () => (ui.weekStart = addDays(ui.weekStart, 7)),
+    "week-today": () => (ui.weekStart = mondayOf(todayISO())),
+    "sched-view": () => (ui.schedView = el.dataset.view),
+    "month-prev": () => (ui.monthStart = addMonths(ui.monthStart, -1)),
+    "month-next": () => (ui.monthStart = addMonths(ui.monthStart, 1)),
+    "month-today": () => (ui.monthStart = firstOfMonth(todayISO()))
+  };
+  if (navActs[act]) { navActs[act](); return render(); }
+
   if (ui.readOnly) return;
 
   switch (act) {
@@ -315,9 +330,6 @@ document.addEventListener("click", async (e) => {
     }
     case "leads-clear": ui.leadStage = ui.leadSource = ui.leadChannel = ui.search = ""; render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
-    case "week-prev": ui.weekStart = addDays(ui.weekStart, -7); render(); break;
-    case "week-next": ui.weekStart = addDays(ui.weekStart, 7); render(); break;
-    case "week-today": ui.weekStart = mondayOf(todayISO()); render(); break;
     case "done-action": {
       if (!lead) break;
       logActivity(lead, `Done: ${lead.nextNote || "follow-up"}`);
