@@ -105,13 +105,23 @@ export function quoteFor(lead, rates, vatRegistered = true) {
   const billable = area * (1 + num(rates.wastePct, 0) / 100);
   const grass = rates.grasses.find((g) => g.name === s.grassSpec) ?? rates.grasses[0] ?? { name: "—", rate: 0 };
 
+  // Days on site: an explicit override (used by the estimator) or an estimate.
+  const days = num(s.crewDays, 0) || estimateDays(area, rates);
+
   const lines = [];
   const per = (rate) => `${area.toFixed(1)} m² @ £${num(rate).toFixed(2)}`;
   const cost = (label, rate) => { const amt = area * num(rate); if (amt > 0.004) lines.push({ label, detail: per(rate), amt, grp: "cost" }); };
 
   cost(`Grass — ${grass.name}`, grass.rate);
   for (const [key, label] of WORKS) if (workIsOn(s, key)) cost(label, rates[key]);
-  cost("Crew labour", rates.labour);
+  // Crew labour: a per-job day rate × days on site overrides the per-m² default.
+  const dayRate = num(s.crewDayRate, 0);
+  if (dayRate > 0) {
+    const amt = dayRate * days;
+    if (amt > 0.004) lines.push({ label: "Crew labour", detail: `${days} day${days > 1 ? "s" : ""} @ £${dayRate.toFixed(2)}`, amt, grp: "cost" });
+  } else {
+    cost("Crew labour", rates.labour);
+  }
   cost("Vans & fuel", rates.vans);
   cost("Sundries", rates.sundries);
 
@@ -133,7 +143,6 @@ export function quoteFor(lead, rates, vatRegistered = true) {
   const net = coreNet + extra - discount;
   const vatPct = vatRegistered ? num(rates.vatPct, 0) : 0;
   const vat = net * vatPct / 100;
-  const days = estimateDays(area, rates);
 
   // What the customer sees on the printed quote: one supply-&-install line.
   const custLines = [{

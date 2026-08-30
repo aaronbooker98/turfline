@@ -21,6 +21,12 @@ let lastSaved = null;      // snapshot of the last state pushed to the server
 let unsub = null;          // realtime unsubscribe
 let lastLocalEdit = 0;     // ms — used to ignore our own writes echoing back
 
+// Scratch state for the Quote estimator (never saved).
+function freshEst() {
+  return { mode: "area", area: "", w: "", l: "", grass: "", days: "", crewDayRate: "",
+           priceMode: "margin", marginPct: "", pricePerM2: "", accessPct: "", off: {} };
+}
+
 const ui = {
   view: "today",
   openId: null,
@@ -34,7 +40,7 @@ const ui = {
   leadStage: "",
   leadSource: "",
   leadChannel: "",
-  est: { mode: "area", area: "", w: "", l: "", grass: "", accessPct: "", off: {} },
+  est: freshEst(),
   deviceCrew: localStorage.getItem("turfline-crew") || null,
   readOnly: false,
   saveState: "idle",
@@ -333,7 +339,8 @@ document.addEventListener("click", async (e) => {
     }
     case "leads-clear": ui.leadStage = ui.leadSource = ui.leadChannel = ui.search = ""; render(); break;
     case "est-mode": ui.est.mode = el.dataset.mode; render(); break;
-    case "est-reset": ui.est = { mode: "area", area: "", w: "", l: "", grass: "", accessPct: "", off: {} }; render(); break;
+    case "est-pricemode": ui.est.priceMode = el.dataset.mode; render(); break;
+    case "est-reset": ui.est = freshEst(); render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "done-action": {
       if (!lead) break;

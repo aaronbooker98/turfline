@@ -19,6 +19,14 @@ test("prices a job from a per-m² cost stack plus a margin", () => {
   assert.equal(q.total.toFixed(2), "2783.42");
 });
 
+test("a per-job crew day rate × days replaces the per-m² labour line", () => {
+  const perM2 = quoteFor(lead({ areaM2: 40 }), rates);
+  const dayRate = quoteFor(lead({ areaM2: 40, crewDayRate: 500, crewDays: 3 }), rates);
+  // labour swaps from 40 × £10.50 (420) to 3 × £500 (1500): cost up £1080
+  assert.equal((dayRate.cost - perM2.cost).toFixed(2), "1080.00");
+  assert.ok(dayRate.lines.some((l) => l.label === "Crew labour" && /3 days @ £500/.test(l.detail)));
+});
+
 test("the customer quote collapses to a single supply-&-install line", () => {
   const q = quoteFor(lead({ areaM2: 40 }), rates);
   assert.equal(q.custLines.length, 1);
