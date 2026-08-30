@@ -2,16 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   furthestStage, funnel, winRate, byMonth, bySource, sourceKey, avgDaysToClose,
-  lostReasons, moneyOwed, overview
+  lostReasons, moneyOwed, overview, invoiceSummary
 } from "../src/analytics.js";
 import { DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
-const state = (leads) => ({
+const state = (leads, invoices = []) => ({
   business: { name: "Test", vat: true },
   rates: structuredClone(DEFAULT_RATES),
   crews: [],
-  leads
+  leads,
+  invoices
 });
 const lead = (patch = {}) => ({
   id: patch.id ?? "x", name: patch.name ?? "A", source: patch.source ?? "",
@@ -118,6 +119,21 @@ test("moneyOwed sums the outstanding balance on won/installed jobs", () => {
   // second job is marked fully paid, so only the first contributes
   const firstTotal = overview(s).wonValue; // won+installed value
   assert.ok(owed < firstTotal);
+});
+
+test("invoiceSummary totals VAT this quarter and what's unpaid", () => {
+  const t = "2026-08-15"; // Q3 (Jul–Sep)
+  const s = state([], [
+    { number: 1, date: "2026-07-10", amount: 2400, amountIncVat: true, vat: true, paid: true },   // this quarter
+    { number: 2, date: "2026-08-01", amount: 1200, amountIncVat: true, vat: true, paid: false },   // this quarter, unpaid, overdue
+    { number: 3, date: "2026-04-02", amount: 6000, amountIncVat: true, vat: true, paid: false }    // last quarter, unpaid
+  ]);
+  const iv = invoiceSummary(s, t);
+  assert.equal(iv.invoicesThisQuarter, 2);
+  assert.equal(iv.vatThisQuarter.toFixed(2), (2400 / 6 + 1200 / 6).toFixed(2)); // 1/6 of an inc-VAT figure is the VAT
+  assert.equal(iv.invoicesOutstanding.toFixed(2), "7200.00");
+  assert.equal(iv.invoicesOverdue.toFixed(2), "7200.00"); // both unpaid are >7 days old
+  assert.match(iv.quarterLabel, /Jul.*Sep.*2026/);
 });
 
 test("overview pulls the headline numbers together", () => {

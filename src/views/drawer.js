@@ -27,13 +27,14 @@ export function quoteBreakdown(lead, state) {
   });
 }
 
-/** Deposit / balance block. Shown for jobs that are won or beyond. */
-function paymentSection(lead, total) {
+/** Deposit / balance block + raise-invoice buttons. Shown for won / installed jobs. */
+function paymentSection(ctx, lead, total) {
   if (!["won", "installed"].includes(lead.stage) || !(total > 0)) return "";
   const pay = paymentState(lead, total);
   const row = (label, amt, key, on) => `<label class="payrow">
     <span><input type="checkbox" data-f="payment.${key}"${on ? " checked" : ""}> ${esc(label)}</span>
     <span class="num">${money2(amt)}</span></label>`;
+  const linked = (ctx.state.invoices ?? []).filter((i) => i.leadId === lead.id).sort((a, b) => (a.number || 0) - (b.number || 0));
   return `<div class="sect"><h4>Payment</h4>
     <div class="grid2">
       <div class="field"><label class="lbl">Deposit £</label>
@@ -44,6 +45,13 @@ function paymentSection(lead, total) {
     </div>
     ${row("Deposit received", pay.deposit, "depositPaid", pay.depositPaid)}
     ${row("Balance received", pay.balance, "balancePaid", pay.balancePaid)}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn sm" data-act="raise-invoice" data-id="${lead.id}" data-kind="full">${icon("invoices")}Raise invoice</button>
+      ${pay.deposit > 0 ? `<button class="btn sm ghost" data-act="raise-invoice" data-id="${lead.id}" data-kind="deposit">Deposit invoice</button>` : ""}
+      ${pay.deposit > 0 && pay.balance > 0 ? `<button class="btn sm ghost" data-act="raise-invoice" data-id="${lead.id}" data-kind="balance">Balance invoice</button>` : ""}
+    </div>
+    ${linked.length ? `<div style="margin-top:10px;font-size:12px;color:var(--muted)">Invoices raised:
+      ${linked.map((i) => `<a href="#" data-invoice="${i.id}" style="color:var(--accent);font-weight:600;margin-right:8px">#${esc(String(i.number ?? "?"))}${i.paid ? " ✓" : ""}</a>`).join("")}</div>` : ""}
   </div>`;
 }
 
@@ -108,7 +116,14 @@ export function renderDrawer(ctx, lead) {
           <select class="inp" data-f="survey.grassSpec"${dis}>${state.rates.grasses.map((g) =>
             `<option${g.name === lead.survey.grassSpec ? " selected" : ""}>${esc(g.name)}</option>`).join("")}</select></div>
       </div>
-      ${field("Difficult access surcharge %", "survey.accessPct", lead.survey.accessPct ?? 0, "number", 'step="1"')}
+      <div class="grid2">
+        ${field("Difficult access surcharge %", "survey.accessPct", lead.survey.accessPct ?? 0, "number", 'step="1"')}
+        ${field("Margin %", "survey.marginPct", lead.survey.marginPct ?? "", "number", `step="1" placeholder="${num(state.rates.marginPct)} (standard)"`)}
+      </div>
+      <div class="grid2">
+        ${field("Crew £ per day", "survey.crewDayRate", lead.survey.crewDayRate ?? "", "number", 'step="10" placeholder="standard"')}
+        ${field("Van cost £ (whole job)", "survey.vanCost", lead.survey.vanCost ?? "", "number", 'step="1" placeholder="by m²"')}
+      </div>
       <div class="lbl" style="margin-top:6px">Works included (untick anything this job doesn't need)</div>
       <div class="checks">
         ${WORKS.map(([key, label]) =>
@@ -123,10 +138,11 @@ export function renderDrawer(ctx, lead) {
       <div class="quote-out">${quoteBreakdown(lead, state)}</div>
       ${ro || !(q.total > 0) ? "" : `<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn sm" data-act="print-quote" data-id="${lead.id}">${icon("jobs")}Print / save quote</button>
+        <button class="btn sm ghost" data-act="email-quote" data-id="${lead.id}">Email to customer</button>
         ${lead.quote?.ref ? `<span style="font-size:12px;color:var(--muted)">Ref ${esc(lead.quote.ref)}</span>` : ""}</div>`}
     </div>
 
-    ${ro ? "" : paymentSection(lead, q.total)}
+    ${ro ? "" : paymentSection(ctx, lead, q.total)}
 
     <div class="sect"><h4>Installation</h4>
       <div class="grid3">

@@ -141,8 +141,8 @@ export function quoteFor(lead, rates, vatRegistered = true) {
   const billable = area * (1 + num(rates.wastePct, 0) / 100);
   const grass = rates.grasses.find((g) => g.name === s.grassSpec) ?? rates.grasses[0] ?? { name: "—", rate: 0 };
 
-  // Days on site: an explicit override (used by the estimator) or an estimate.
-  const days = num(s.crewDays, 0) || estimateDays(area, rates);
+  // Days on site: the booked job length, an estimator override, or an estimate.
+  const days = num(lead.job?.days, 0) || num(s.crewDays, 0) || estimateDays(area, rates);
 
   const lines = [];
   const per = (rate) => `${area.toFixed(1)} m² @ £${num(rate).toFixed(2)}`;
@@ -168,7 +168,8 @@ export function quoteFor(lead, rates, vatRegistered = true) {
   cost("Sundries", rates.sundries);
 
   const costTotal = lines.reduce((t, l) => t + l.amt, 0);
-  const marginPct = num(rates.marginPct, 0);
+  // Margin: a per-job override (from the estimator) or the standard rate.
+  const marginPct = (s.marginPct != null && s.marginPct !== "") ? num(s.marginPct) : num(rates.marginPct, 0);
   const margin = costTotal * marginPct / 100;
   if (margin > 0.004) lines.push({ label: "Margin", detail: `${marginPct}%`, amt: margin, grp: "after" });
 

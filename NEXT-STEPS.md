@@ -23,9 +23,11 @@ The live site rebuilds itself about a minute later.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.
-- **Invoices** — menu screen. New invoice blank or pre-filled from a won/finished
-  job; one description + amount (inc or ex VAT); auto invoice numbers from
-  Settings; mark paid; prints in the house format (bank details, VAT no).
+- **Invoices** — menu screen. New invoice blank, pre-filled from a won/finished
+  job, or raised straight from a record (Raise invoice / Deposit / Balance);
+  one description + amount (inc or ex VAT); editable number; auto numbers from
+  Settings; mark paid; print or email in the house format. Unpaid ones show on
+  Today (banner at 7+ days) and in Analytics (VAT this quarter, unpaid total).
   Needs the `invoices` table — run the SQL block from the 2026-08-30 invoices change.
 - **Quote estimator** — second item in the menu. Enter m² (or width × length),
   pick the grass, set crew £/day + days on site, choose flat or by-mileage van
@@ -33,7 +35,8 @@ The live site rebuilds itself about a minute later.
   "£/m² price" and it tells you the margin), untick anything not needed →
   instant ballpark price with cost/margin/profit, plus a "Materials to order"
   list with aggregate tonnages (Type 1 / stone dust / muck-away, from the depths
-  set in Settings → Pricing). Nothing saved.
+  set in Settings → Pricing). "Save as a lead" drops the whole estimate (incl.
+  custom margin / crew rate / van cost) onto a new Surveyed record.
 - **Analytics** — enquiry→won funnel, win rate, avg job value & days to close,
   revenue by month, lead-source performance
 - **Job sheets** — phone view for fitters

@@ -45,7 +45,8 @@ export function normalise(state) {
     l.lostReason ??= "";
   }
   for (const inv of s.invoices) {
-    inv.billTo ??= { name: "", address: "" };
+    inv.billTo ??= { name: "", address: "", email: "" };
+    inv.billTo.email ??= "";
     inv.description ??= "Artificial Grass Supply + fit";
     if (inv.amountIncVat == null) inv.amountIncVat = true;
     if (inv.vat == null) inv.vat = true;
@@ -63,7 +64,7 @@ export function newInvoice(state, lead = null) {
     id: newId(),
     number,
     date: todayISO(),
-    billTo: { name: "", address: "" },
+    billTo: { name: "", address: "", email: "" },
     leadId: lead?.id ?? null,
     description: "Artificial Grass Supply + fit",
     amount: "",
@@ -75,6 +76,7 @@ export function newInvoice(state, lead = null) {
   if (lead) {
     inv.billTo.name = lead.name || "";
     inv.billTo.address = [lead.address, lead.postcode].filter(Boolean).join("\n");
+    inv.billTo.email = lead.email || "";
   }
   return inv;
 }

@@ -58,6 +58,7 @@ function invoiceForm(ctx, inv) {
       <button class="btn sm ghost" data-act="invoice-done">${icon("back")}All invoices</button>
       <div class="spacer"></div>
       <button class="btn sm" data-act="print-invoice" data-id="${inv.id}">${icon("jobs")}Print / Save PDF</button>
+      <button class="btn sm ghost" data-act="email-invoice" data-id="${inv.id}">Email to customer</button>
       <button class="btn sm ghost danger" data-act="del-invoice" data-id="${inv.id}">Delete</button>
     </div>
 
@@ -77,7 +78,10 @@ function invoiceForm(ctx, inv) {
               ${jobs.map((l) => `<option value="${l.id}"${inv.leadId === l.id ? " selected" : ""}>${esc(l.name || "Unnamed")}${l.postcode ? " · " + esc(l.postcode) : ""}</option>`).join("")}
             </select></div>
 
-          ${field("Bill to — name", "billTo.name", inv.billTo?.name)}
+          <div class="grid2">
+            ${field("Bill to — name", "billTo.name", inv.billTo?.name)}
+            ${field("Bill to — email", "billTo.email", inv.billTo?.email, "email")}
+          </div>
           <div class="field"><label class="lbl">Bill to — address</label>
             <textarea class="inp" data-inv="billTo.address" rows="3">${esc(inv.billTo?.address ?? "")}</textarea></div>
           ${field("Description", "description", inv.description)}

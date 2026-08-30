@@ -2,7 +2,7 @@
 // No DOM and no module-level state: everything here is unit tested in
 // test/analytics.test.js and can be run without a browser.
 import { num, todayISO, dayDiff, parseISO } from "./util.js";
-import { quoteFor, isCold, paymentState } from "./model.js";
+import { quoteFor, isCold, paymentState, invoiceTotals } from "./model.js";
 
 export const WON_STAGES = ["won", "installed"];
 export const OPEN_STAGES = ["enquiry", "survey", "surveyed", "quoted"];
@@ -126,6 +126,31 @@ export function moneyOwed(state) {
     .reduce((s, l) => s + paymentState(l, quoteFor(l, state.rates, state.business.vat).total).outstanding, 0);
 }
 
+/** Invoice figures: VAT and net raised this calendar quarter, plus what's unpaid. */
+export function invoiceSummary(state, today = todayISO()) {
+  const vatPct = state.business.vat ? num(state.rates.vatPct, 20) : 0;
+  const d = parseISO(today) ?? new Date();
+  const q = Math.floor(d.getMonth() / 3);
+  const qStart = new Date(d.getFullYear(), q * 3, 1);
+  const qEnd = new Date(d.getFullYear(), q * 3 + 3, 1);
+  let vatQ = 0, netQ = 0, countQ = 0, outstanding = 0, overdue = 0;
+  for (const inv of state.invoices ?? []) {
+    const t = invoiceTotals(inv, vatPct);
+    if (!inv.paid) {
+      outstanding += t.total;
+      if (dayDiff(inv.date, today) > 7) overdue += t.total;
+    }
+    const x = parseISO(inv.date);
+    if (x && x >= qStart && x < qEnd) { vatQ += t.vat; netQ += t.net; countQ++; }
+  }
+  const mon = (m) => new Date(2000, m, 1).toLocaleDateString("en-GB", { month: "short" });
+  return {
+    vatThisQuarter: vatQ, netThisQuarter: netQ, invoicesThisQuarter: countQ,
+    quarterLabel: `${mon(q * 3)}–${mon(q * 3 + 2)} ${qStart.getFullYear()}`,
+    invoicesOutstanding: outstanding, invoicesOverdue: overdue
+  };
+}
+
 /** Mean calendar days from a lead being created to it closing won. */
 export function avgDaysToClose(leads) {
   const spans = leads
@@ -165,6 +190,7 @@ export function overview(state, today = todayISO()) {
     coldQuotes: cold.length,
     coldValue: sum(cold),
     moneyOwed: moneyOwed(state),
+    ...invoiceSummary(state, today),
     funnel: funnel(leads),
     bySource: bySource(leads, state),
     byMonth: byMonth(leads, state, 6, today),

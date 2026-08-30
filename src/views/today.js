@@ -1,7 +1,20 @@
 // The home screen: what needs doing now, and what is landing this week.
 import { esc, money, num, todayISO, dayDiff, fmtDate, fmtDateLong } from "../util.js";
-import { quoteFor, actionState, isCold, stage } from "../model.js";
+import { quoteFor, actionState, isCold, stage, invoiceTotals } from "../model.js";
 import { icon } from "../icons.js";
+
+function invoiceRow(inv, total, days) {
+  const overdue = days > 7;
+  return `<div class="qrow" data-invoice="${inv.id}">
+    <span class="qmark ${overdue ? "crit" : "warn"}"></span>
+    <div class="qmain">
+      <div class="qname">${esc(inv.billTo?.name || "Invoice " + (inv.number ?? ""))}</div>
+      <div class="qmeta">Invoice ${esc(String(inv.number ?? "—"))} · raised ${esc(fmtDate(inv.date))}</div>
+    </div>
+    <div class="qright"><span class="qval">${money(total)}</span>
+      <span class="pill ${overdue ? "crit" : "warn"}"><span class="pdot"></span>${days <= 0 ? "today" : days + " day" + (days === 1 ? "" : "s")}</span>
+    </div></div>`;
+}
 
 const tile = (value, key, meta, cls = "") => `
   <div class="tile ${cls}"><span class="stripe"></span>
@@ -50,6 +63,14 @@ export function renderToday(ctx) {
 
   const sum = (list) => list.reduce((s, l) => s + value(l), 0);
 
+  const vatPct = state.business.vat ? num(state.rates.vatPct, 20) : 0;
+  const unpaid = (state.invoices ?? [])
+    .filter((i) => !i.paid)
+    .map((i) => ({ inv: i, total: invoiceTotals(i, vatPct).total, days: dayDiff(i.date, t) }))
+    .sort((a, b) => b.days - a.days);
+  const unpaidTotal = unpaid.reduce((s, u) => s + u.total, 0);
+  const invOverdue = unpaid.filter((u) => u.days > 7).length;
+
   const installRow = (l) => {
     const cr = state.crews.find((c) => c.id === l.job.crewId);
     const d = dayDiff(t, l.job.startDate);
@@ -63,6 +84,7 @@ export function renderToday(ctx) {
 
   return `
     ${cold.length ? `<div class="banner warn">${icon("alert")}<div><strong>${cold.length} quote${cold.length > 1 ? "s have" : " has"} gone cold.</strong> No movement in a fortnight — worth one last call before writing them off.</div></div>` : ""}
+    ${invOverdue ? `<div class="banner warn">${icon("alert")}<div><strong>${invOverdue} invoice${invOverdue > 1 ? "s" : ""} unpaid 7+ days.</strong> ${money(unpaidTotal)} outstanding — chase it.</div></div>` : ""}
     <div class="tiles">
       ${tile(due.length, "Needs action", `${overdue} overdue · ${due.length - overdue} due today`, overdue ? "alert" : "")}
       ${tile(quoted.length, "Quotes out", `${money(sum(quoted))} in play`)}
@@ -75,6 +97,8 @@ export function renderToday(ctx) {
           <div class="card-b flush">${due.length ? `<div class="queue">${due.map((l) => chaseRow(l, value(l))).join("")}</div>` : `<div class="empty"><strong>You are straight</strong>Nothing overdue and nothing due today.</div>`}</div></section>
         <section class="card"><div class="card-h"><h3>Coming up this week</h3><span class="n">${soon.length}</span></div>
           <div class="card-b flush">${soon.length ? `<div class="queue">${soon.slice(0, 6).map((l) => chaseRow(l, value(l))).join("")}</div>` : `<div class="empty">Nothing scheduled in the next week.</div>`}</div></section>
+        ${unpaid.length ? `<section class="card"><div class="card-h"><h3>Unpaid invoices</h3><span class="n">${money(unpaidTotal)}</span></div>
+          <div class="card-b flush"><div class="queue">${unpaid.map((u) => invoiceRow(u.inv, u.total, u.days)).join("")}</div></div></section>` : ""}
       </div>
       <section class="card"><div class="card-h"><h3>Installs</h3><span class="n">next 7 days</span></div>
         <div class="card-b flush">${installs.length ? `<div class="queue">${installs.map(installRow).join("")}</div>` : `<div class="empty">No installs booked in the next week.</div>`}</div></section>

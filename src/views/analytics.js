@@ -32,6 +32,8 @@ export function renderAnalytics(ctx) {
       ${tile(money(o.wonThisMonthValue), "Won this month", `${o.wonThisMonthCount} job${o.wonThisMonthCount === 1 ? "" : "s"}`)}
       ${tile(money(o.moneyOwed), "Money owed", "across won & installed jobs", o.moneyOwed > 0 ? "alert" : "")}
       ${tile(o.coldQuotes, "Cold quotes", `${money(o.coldValue)} going stale`, o.coldQuotes ? "alert" : "")}
+      ${tile(money(o.vatThisQuarter), "VAT this quarter", `${o.quarterLabel} · ${o.invoicesThisQuarter} invoice${o.invoicesThisQuarter === 1 ? "" : "s"} · ${money(o.netThisQuarter)} net`)}
+      ${o.invoicesOutstanding > 0 ? tile(money(o.invoicesOutstanding), "Invoices unpaid", o.invoicesOverdue > 0 ? `${money(o.invoicesOverdue)} overdue 7+ days` : "all within terms", o.invoicesOverdue > 0 ? "alert" : "") : ""}
     </div>
 
     <div class="an-grid">

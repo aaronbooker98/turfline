@@ -176,7 +176,10 @@ export function renderEstimator(ctx) {
               `<label><input type="checkbox" data-est-work="${key}"${est.off?.[key] ? "" : " checked"}> ${esc(label)} <span class="est-rate">£${num(rates[key]).toFixed(2)}</span></label>`).join("")}
           </div>
 
-          <button class="btn sm ghost" data-act="est-reset">Reset</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm ghost" data-act="est-reset">Reset</button>
+            ${area > 0 ? `<button class="btn sm" data-act="est-save">Save as a lead</button>` : ""}
+          </div>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
-import { esc, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate } from "./util.js";
-import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
+import { esc, num, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate, money2 } from "./util.js";
+import { quoteFor, actionState, setStage, logActivity, stage, estimateDays, WORKS, paymentState, invoiceTotals } from "./model.js";
 import { normalise, newLead, newInvoice, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import * as db from "./db.js";
@@ -22,6 +22,14 @@ let state = null;          // null until signed in and loaded
 let lastSaved = null;      // snapshot of the last state pushed to the server
 let unsub = null;          // realtime unsubscribe
 let lastLocalEdit = 0;     // ms — used to ignore our own writes echoing back
+
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+/** Open the user's email client with recipient / subject / body pre-filled. */
+function openMail(to, subject, body) {
+  const q = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = `mailto:${encodeURIComponent(to || "")}?${q}`;
+}
 
 // Scratch state for the Quote estimator (never saved).
 function freshEst() {
@@ -277,7 +285,7 @@ document.addEventListener("click", async (e) => {
 
   if ((el = hit("[data-nav]"))) { ui.view = el.dataset.nav; ui.openId = null; ui.invoiceEdit = null; return render(); }
   if ((el = hit("[data-open]"))) { if (ui.role === "fitters") return; ui.openId = el.dataset.open; return render(); }
-  if ((el = hit("[data-invoice]"))) { ui.invoiceEdit = el.dataset.invoice; return render(); }
+  if ((el = hit("[data-invoice]"))) { ui.view = "invoices"; ui.openId = null; ui.invoiceEdit = el.dataset.invoice; return render(); }
   if ((el = hit("[data-toggle]"))) { ui.expandedJob = ui.expandedJob === el.dataset.toggle ? null : el.dataset.toggle; return render(); }
   if ((el = hit("[data-sort]"))) {
     const col = el.dataset.sort;
@@ -378,6 +386,92 @@ document.addEventListener("click", async (e) => {
       if (!confirm("Delete this invoice for good?")) break;
       state.invoices = state.invoices.filter((i) => i.id !== el.dataset.id);
       ui.invoiceEdit = null; save(); render();
+      break;
+    }
+    case "est-save": {
+      const raw = prompt("Customer name for this lead?", "");
+      if (raw === null) break;
+      const e = ui.est;
+      const area = e.mode === "wl" ? num(e.w) * num(e.l) : num(e.area);
+      const days = num(e.days) || estimateDays(area, state.rates);
+      const l = newLead(state.rates);
+      l.name = raw.trim();
+      l.survey.areaM2 = area || "";
+      if (e.grass) l.survey.grassSpec = e.grass;
+      if (num(e.accessPct)) l.survey.accessPct = num(e.accessPct);
+      for (const [key] of WORKS) if (e.off?.[key]) l.survey[key] = false;
+      l.job.days = days;
+      if (num(e.crewDayRate)) l.survey.crewDayRate = num(e.crewDayRate);
+      if (e.vanMode === "mileage") {
+        const one = num(e.siteMiles), vans = num(e.vans) || 2;
+        const rate = num(e.mileageRate) || Number(state.rates.mileageRate) || 0.55;
+        l.survey.vanCost = round2(one * 2 * vans * days * rate);
+        l.survey.vanNote = `${(one * 2).toFixed(0)} mi round trip · ${vans} van${vans > 1 ? "s" : ""} · ${days} day${days > 1 ? "s" : ""} @ £${rate.toFixed(2)}/mi`;
+      }
+      if (e.priceMode === "price" && num(e.pricePerM2) > 0 && area > 0) {
+        const cq = quoteFor({ survey: { ...l.survey }, job: l.job }, state.rates, state.business.vat);
+        l.survey.marginPct = cq.cost ? Math.round(((num(e.pricePerM2) * area - cq.cost) / cq.cost) * 1000) / 10 : num(state.rates.marginPct);
+      } else if (e.marginPct !== "" && e.marginPct != null) {
+        l.survey.marginPct = num(e.marginPct);
+      }
+      state.leads.unshift(l);
+      setStage(l, "surveyed");
+      logActivity(l, "Created from the quote estimator");
+      ui.est = freshEst();
+      ui.view = "leads"; ui.openId = l.id;
+      save(); render();
+      break;
+    }
+    case "raise-invoice": {
+      const l = leadById(el.dataset.id);
+      if (!l) break;
+      const q = quoteFor(l, state.rates, state.business.vat);
+      const pay = paymentState(l, q.total);
+      const kind = el.dataset.kind;
+      const inv = newInvoice(state, l);
+      inv.amountIncVat = true;
+      if (kind === "deposit") { inv.amount = round2(pay.deposit); inv.description = "Deposit — artificial grass installation"; }
+      else if (kind === "balance") { inv.amount = round2(pay.balance); inv.description = "Balance on completion — artificial grass installation"; }
+      else { inv.amount = round2(q.total); inv.description = "Artificial Grass Supply + fit"; }
+      state.invoices.unshift(inv);
+      logActivity(l, `${kind === "deposit" ? "Deposit i" : kind === "balance" ? "Balance i" : "I"}nvoice ${inv.number} raised`);
+      ui.openId = null; ui.view = "invoices"; ui.invoiceEdit = inv.id;
+      save(); render();
+      break;
+    }
+    case "email-quote": {
+      const l = leadById(el.dataset.id);
+      if (!l) break;
+      const q = quoteFor(l, state.rates, state.business.vat);
+      const b = state.business;
+      const body = [
+        `Hi ${l.name || "there"},`, "",
+        `Thanks for the enquiry. Here's your quote for artificial grass${l.address ? " at " + l.address : ""}:`, "",
+        `Area: ${q.area} m²`, `Grass: ${q.grass.name}`,
+        `Total${b.vat ? " (inc VAT)" : ""}: ${money2(q.total)}`,
+        l.quote?.ref ? `Quote ref: ${l.quote.ref}` : "",
+        "", "The full quote is attached.", "",
+        `Any questions, just reply or call ${b.phone || ""}.`, "", b.name
+      ].filter((x) => x !== "").join("\n");
+      openMail(l.email, `Your quote from ${b.name}`, body);
+      break;
+    }
+    case "email-invoice": {
+      const inv = state.invoices.find((i) => i.id === el.dataset.id);
+      if (!inv) break;
+      const b = state.business;
+      const t = invoiceTotals(inv, b.vat ? state.rates.vatPct : 0);
+      const body = [
+        `Hi ${inv.billTo?.name || "there"},`, "",
+        `Please find invoice ${inv.number} attached.`, "",
+        `Amount due: ${money2(t.total)}`,
+        `Terms: ${b.invoiceTerms || "payment due on receipt"}`, "",
+        "Payment to:", b.legalName || b.name, b.bankName || "",
+        b.sortCode ? `Sort code: ${b.sortCode}` : "",
+        b.accountNo ? `Account no: ${b.accountNo}` : "",
+        "", "Thank you,", b.name
+      ].filter((x) => x !== "").join("\n");
+      openMail(inv.billTo?.email, `Invoice ${inv.number} — ${b.legalName || b.name}`, body);
       break;
     }
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;

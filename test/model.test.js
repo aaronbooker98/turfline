@@ -59,6 +59,15 @@ test("access surcharge applies to the whole job, discount comes off after", () =
   assert.equal(discounted.toFixed(2), (base * 1.1 - 100).toFixed(2));
 });
 
+test("a per-job margin % overrides the standard rate", () => {
+  const std = quoteFor(lead({ areaM2: 40 }), rates);                    // 40% default
+  const custom = quoteFor(lead({ areaM2: 40, marginPct: 60 }), rates);
+  assert.equal(custom.margin.toFixed(2), (custom.cost * 0.6).toFixed(2));
+  assert.ok(custom.net > std.net);
+  // an explicit 0 is respected (not treated as "unset")
+  assert.equal(quoteFor(lead({ areaM2: 40, marginPct: 0 }), rates).margin, 0);
+});
+
 test("VAT is dropped when the business is not registered", () => {
   const q = quoteFor(lead({ areaM2: 30 }), rates, false);
   assert.equal(q.vat, 0);
