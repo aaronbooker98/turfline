@@ -15,7 +15,7 @@ export function buildInvoiceDoc(inv, state, { logoUrl } = {}) {
   const b = state.business;
   const t = invoiceTotals(inv, b.vat ? state.rates.vatPct : 0);
   const billTo = [inv.billTo?.name, inv.billTo?.address].filter(Boolean).join("\n");
-  const bizContact = [b.phone, b.email].filter(Boolean).map(esc).join(" &nbsp;·&nbsp; ");
+  const fromLines = [b.legalName || b.name, b.address, b.email].filter(Boolean).map(esc).join("<br>");
 
   const payLines = [
     "PAYMENT MADE TO",
@@ -32,11 +32,11 @@ export function buildInvoiceDoc(inv, state, { logoUrl } = {}) {
   html,body{margin:0;padding:0}
   body{font:14px/1.6 -apple-system,"Helvetica Neue",Arial,sans-serif;color:#1b1b1b;background:#fff}
   .sheet{max-width:760px;margin:0 auto;padding:0 0 50px}
-  .band{background:#161616;color:#fff;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-  .band img{height:70px;width:auto;display:block}
+  .band{padding:26px 32px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:2px solid #161616}
+  .band img{height:80px;width:auto;display:block}
   .band .name{font-weight:700;font-size:22px;letter-spacing:.02em}
-  .band .contact{font-size:12px;color:#cfcfcf;text-align:right;line-height:1.7}
-  .body{padding:28px 32px}
+  .band .from{font-size:12px;color:#666;text-align:right;line-height:1.7}
+  .body{padding:24px 32px}
   .to{white-space:pre-line;margin-bottom:22px}
   .to .lbl{color:#888;font-size:12px;margin-bottom:2px}
   .meta{font-size:13px;margin-bottom:22px;line-height:1.9}
@@ -64,7 +64,7 @@ export function buildInvoiceDoc(inv, state, { logoUrl } = {}) {
 <div class="sheet">
   <div class="band">
     ${logoUrl ? `<img src="${esc(logoUrl)}" alt="${esc(b.name)}">` : `<span class="name">${esc(b.name)}</span>`}
-    <div class="contact">${bizContact || ""}</div>
+    <div class="from">${fromLines || ""}</div>
   </div>
   <div class="body">
     <div class="to"><div class="lbl">Attention:</div>${esc(billTo) || "—"}</div>

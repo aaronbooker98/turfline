@@ -56,8 +56,15 @@ svg{flex:none}
 .shell{display:grid;grid-template-columns:216px 1fr;min-height:100vh}
 .rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px;padding:18px 12px;position:sticky;top:0;height:100vh}
 .brand{display:block;padding:2px 4px 16px}
-.brand-logo{display:block;width:100%;max-width:184px;border-radius:6px}
+.brand-logo{display:block;width:100%;max-width:172px}
 .brand-sub{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin:8px 0 0 3px}
+/* charcoal wordmark: give it a light plate when the UI is dark so it stays legible */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .brand-logo,
+  :root:not([data-theme="light"]) .login-logo{background:#f2f4ef;border-radius:8px;padding:8px 10px}
+}
+:root[data-theme="dark"] .brand-logo,
+:root[data-theme="dark"] .login-logo{background:#f2f4ef;border-radius:8px;padding:8px 10px}
 .navbtn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);border:0;background:transparent;color:var(--ink-2);cursor:pointer;text-align:left;font-weight:500;font-size:13.5px;width:100%;transition:background .12s,color .12s;position:relative}
 .navbtn:hover{background:var(--surface-2);color:var(--ink)}
 .navbtn[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
@@ -72,7 +79,7 @@ svg{flex:none}
 /* ---------- login ---------- */
 .login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--ground)}
 .login-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:26px 24px;display:flex;flex-direction:column}
-.login-logo{display:block;width:170px;max-width:70%;border-radius:6px;margin-bottom:18px}
+.login-logo{display:block;width:186px;max-width:74%;margin-bottom:18px}
 .login-card h1{font-size:19px;font-weight:700;margin-bottom:3px}
 .login-sub{color:var(--muted);font-size:13px;margin:0 0 16px}
 .login-card .lbl{margin-top:10px}

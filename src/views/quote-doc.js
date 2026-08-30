@@ -28,11 +28,11 @@ export function buildQuoteDoc(lead, state, { logoUrl } = {}) {
   html,body{margin:0;padding:0}
   body{font:14px/1.5 -apple-system,"Helvetica Neue",Arial,sans-serif;color:#1b1b1b;background:#fff}
   .sheet{max-width:760px;margin:0 auto;padding:0 0 40px}
-  .band{background:#161616;color:#fff;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-  .band img{height:64px;width:auto;display:block}
+  .band{padding:26px 32px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:2px solid #161616}
+  .band img{height:74px;width:auto;display:block}
   .band .name{font-weight:700;font-size:20px;letter-spacing:.02em}
-  .band .contact{font-size:12px;color:#cfcfcf;text-align:right;line-height:1.7}
-  .body{padding:28px 32px}
+  .band .contact{font-size:12px;color:#666;text-align:right;line-height:1.7}
+  .body{padding:24px 32px}
   h1{font-size:22px;margin:0 0 4px}
   .meta{color:#666;font-size:12.5px;margin-bottom:24px}
   .parties{display:flex;gap:40px;margin-bottom:26px}
