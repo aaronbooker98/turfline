@@ -1,7 +1,7 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
 import { esc, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, estimateDays } from "./model.js";
-import { normalise, newLead, CREW_COLOURS } from "./state.js";
+import { normalise, newLead, newInvoice, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import * as db from "./db.js";
 import { renderLogin } from "./views/login.js";
@@ -13,8 +13,10 @@ import { renderAnalytics } from "./views/analytics.js";
 import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
 import { renderEstimator, estimatorResults } from "./views/estimator.js";
+import { renderInvoices, invoiceTotalsHtml } from "./views/invoices.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
 import { buildQuoteDoc } from "./views/quote-doc.js";
+import { buildInvoiceDoc } from "./views/invoice-doc.js";
 
 let state = null;          // null until signed in and loaded
 let lastSaved = null;      // snapshot of the last state pushed to the server
@@ -41,6 +43,7 @@ const ui = {
   leadSource: "",
   leadChannel: "",
   est: freshEst(),
+  invoiceEdit: null,
   deviceCrew: localStorage.getItem("turfline-crew") || null,
   readOnly: false,
   saveState: "idle",
@@ -61,10 +64,11 @@ const VIEWS = {
   schedule: { title: "Schedule", sub: "Crews, jobs and clashes", render: renderSchedule },
   analytics: { title: "Analytics", sub: "Funnel, win rate and where the money comes from", render: renderAnalytics },
   estimator: { title: "Quote estimator", sub: "A quick ballpark price — no record needed", render: renderEstimator },
+  invoices: { title: "Invoices", sub: "Raise and print invoices", render: renderInvoices },
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
-const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "schedule", "analytics", "jobs", "settings"];
+const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "schedule", "analytics", "invoices", "jobs", "settings"];
 const FITTER_NAV = ["jobs", "schedule"];
 const navFor = () => (ui.role === "fitters" ? FITTER_NAV : OFFICE_NAV);
 
@@ -102,7 +106,7 @@ async function reload() {
 }
 
 function fixFitters(s) {
-  s.crews ??= []; s.leads ??= [];
+  s.crews ??= []; s.leads ??= []; s.invoices ??= [];
   for (const l of s.leads) { l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= []; }
   return s;
 }
@@ -116,7 +120,7 @@ function wireRealtime() {
     if (Date.now() - lastLocalEdit < 4000) return;   // our own change coming back
     clearTimeout(t);
     t = setTimeout(async () => {
-      if (ui.openId || ui.saveState === "pending") return; // don't stomp an edit in progress
+      if (ui.openId || ui.invoiceEdit || ui.saveState === "pending") return; // don't stomp an edit in progress
       try { await reload(); render(); } catch (e) { console.error(e); }
     }, 500);
   });
@@ -204,7 +208,8 @@ function render() {
   const counts = {
     today: [c.action, c.overdue > 0], leads: [state.leads.length, false],
     pipeline: [c.pipeline, false], schedule: [c.installs, false],
-    analytics: [0, false], estimator: [0, false], jobs: [0, false], settings: [0, false]
+    analytics: [0, false], estimator: [0, false], jobs: [0, false], settings: [0, false],
+    invoices: [state.invoices.filter((i) => !i.paid).length, false]
   };
   const nav = navFor().map((id) => [id, VIEWS[id].title, ...counts[id]]);
   const v = VIEWS[ui.view];
@@ -269,8 +274,9 @@ document.addEventListener("click", async (e) => {
   const hit = (sel) => e.target.closest(sel);
   let el;
 
-  if ((el = hit("[data-nav]"))) { ui.view = el.dataset.nav; ui.openId = null; return render(); }
+  if ((el = hit("[data-nav]"))) { ui.view = el.dataset.nav; ui.openId = null; ui.invoiceEdit = null; return render(); }
   if ((el = hit("[data-open]"))) { if (ui.role === "fitters") return; ui.openId = el.dataset.open; return render(); }
+  if ((el = hit("[data-invoice]"))) { ui.invoiceEdit = el.dataset.invoice; return render(); }
   if ((el = hit("[data-toggle]"))) { ui.expandedJob = ui.expandedJob === el.dataset.toggle ? null : el.dataset.toggle; return render(); }
   if ((el = hit("[data-sort]"))) {
     const col = el.dataset.sort;
@@ -341,6 +347,37 @@ document.addEventListener("click", async (e) => {
     case "est-mode": ui.est.mode = el.dataset.mode; render(); break;
     case "est-pricemode": ui.est.priceMode = el.dataset.mode; render(); break;
     case "est-reset": ui.est = freshEst(); render(); break;
+    case "new-invoice": {
+      const inv = newInvoice(state);
+      state.invoices.unshift(inv);
+      ui.invoiceEdit = inv.id;
+      save(); render();
+      break;
+    }
+    case "invoice-done": ui.invoiceEdit = null; render(); break;
+    case "inv-vatmode": {
+      const inv = state.invoices.find((i) => i.id === ui.invoiceEdit);
+      if (inv) { inv.amountIncVat = el.dataset.mode === "inc"; save(); render(); }
+      break;
+    }
+    case "print-invoice": {
+      const inv = state.invoices.find((i) => i.id === el.dataset.id);
+      if (!inv) break;
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.write(buildInvoiceDoc(inv, state, { logoUrl: location.origin + "/src/assets/yate-logo.png" }));
+        w.document.close();
+      } else {
+        alert("Allow pop-ups for this site to open the invoice.");
+      }
+      break;
+    }
+    case "del-invoice": {
+      if (!confirm("Delete this invoice for good?")) break;
+      state.invoices = state.invoices.filter((i) => i.id !== el.dataset.id);
+      ui.invoiceEdit = null; save(); render();
+      break;
+    }
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "done-action": {
       if (!lead) break;
@@ -424,6 +461,30 @@ document.addEventListener("input", (e) => {
     return render();
   }
   if (ui.readOnly) return;
+
+  if (t.id === "inv-fromjob") {
+    const inv = state.invoices.find((i) => i.id === ui.invoiceEdit);
+    const lead = t.value ? leadById(t.value) : null;
+    if (inv) {
+      inv.leadId = lead?.id ?? null;
+      if (lead) {
+        inv.billTo = { name: lead.name || "", address: [lead.address, lead.postcode].filter(Boolean).join("\n") };
+      }
+      save(); render();
+    }
+    return;
+  }
+  if (t.dataset.inv !== undefined) {
+    const inv = state.invoices.find((i) => i.id === ui.invoiceEdit);
+    if (!inv) return;
+    const value = t.type === "checkbox" ? t.checked : t.type === "number" ? (t.value === "" ? "" : parseFloat(t.value)) : t.value;
+    setPath(inv, t.dataset.inv, value);
+    save();
+    if (t.dataset.inv === "paid") { inv.paidAt = value ? todayISO() : null; render(); return; }
+    const box = document.getElementById("inv-totals");
+    if (box) box.innerHTML = invoiceTotalsHtml(inv, state);
+    return;
+  }
 
   if (t.dataset.est !== undefined || t.dataset.estWork !== undefined) {
     if (t.dataset.estWork !== undefined) ui.est.off[t.dataset.estWork] = !t.checked;

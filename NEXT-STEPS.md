@@ -23,6 +23,10 @@ The live site rebuilds itself about a minute later.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.
+- **Invoices** — menu screen. New invoice blank or pre-filled from a won/finished
+  job; one description + amount (inc or ex VAT); auto invoice numbers from
+  Settings; mark paid; prints in the house format (bank details, VAT no).
+  Needs the `invoices` table — run the SQL block from the 2026-08-30 invoices change.
 - **Quote estimator** — second item in the menu. Enter m² (or width × length),
   pick the grass, set crew £/day + days on site, set a margin % (or flip to
   "£/m² price" and it tells you the margin), untick anything not needed →
@@ -57,9 +61,10 @@ Supabase project `jhkhchhszwmtlhnhmowr`. Live at crm.yateartificialgrass.com.
 - Login creds live in Supabase dashboard -> Authentication -> Users.
 
 Loose ends:
-- [ ] **Run the pricing reset SQL** (Supabase → SQL Editor) so the live rates match
-      the new per-m² model — the block is in the 2026-08-30 pricing change. Until then
-      the live app still carries the old Meadow/Fairway/Premier rates.
+- [ ] **Run the `invoices` table SQL** (Supabase → SQL Editor) — invoices won't
+      save until it exists. It's the `create table public.invoices …` + policy +
+      includes it.
+- [x] Ran the pricing reset SQL (per-m² model live).
 - [ ] Change the fitters password from "YAG123" to something stronger
       (Supabase -> Auth -> Users -> the fitters row -> reset password).
 - [ ] Settings still has "Load example data" / "Delete every record" — office only

@@ -60,6 +60,23 @@ export function renderSettings(ctx) {
         <div class="field"><label class="lbl">Quote terms &amp; conditions</label>
           <textarea class="inp" data-biz="quoteTerms" rows="4">${esc(b.quoteTerms ?? "")}</textarea></div>
       </div></section>
+      <section class="card"><div class="card-h"><h3>Invoice &amp; payment details</h3><span class="n">shown on invoices</span></div><div class="card-b">
+        <div class="field"><label class="lbl">Legal / company name</label>
+          <input class="inp" data-biz="legalName" value="${esc(b.legalName ?? "")}" placeholder="Yate Artificial Grass Ltd"></div>
+        <div class="grid2">
+          <div class="field"><label class="lbl">Bank</label><input class="inp" data-biz="bankName" value="${esc(b.bankName ?? "")}"></div>
+          <div class="field"><label class="lbl">VAT number</label><input class="inp" data-biz="vatNo" value="${esc(b.vatNo ?? "")}"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label class="lbl">Sort code</label><input class="inp" data-biz="sortCode" value="${esc(b.sortCode ?? "")}" placeholder="30-99-50"></div>
+          <div class="field"><label class="lbl">Account number</label><input class="inp" data-biz="accountNo" value="${esc(b.accountNo ?? "")}"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label class="lbl">Invoice terms line</label><input class="inp" data-biz="invoiceTerms" value="${esc(b.invoiceTerms ?? "")}"></div>
+          <div class="field"><label class="lbl">Next invoice number</label><input class="inp num" type="number" step="1" data-biz="nextInvoiceNo" value="${esc(b.nextInvoiceNo ?? 261)}"></div>
+        </div>
+        <div class="field"><label class="lbl">Payment note</label><input class="inp" data-biz="invoiceFoot" value="${esc(b.invoiceFoot ?? "")}" placeholder="OR CASH + CHEQUE ACCEPTED"></div>
+      </div></section>
       <section class="card"><div class="card-h"><h3>Crews</h3><span class="n">${state.crews.length}</span></div><div class="card-b">
         ${state.crews.map((c, i) => `<div class="crewrow">
           <span class="crewdot" style="background:${esc(c.colour)}"></span>

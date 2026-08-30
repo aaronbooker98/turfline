@@ -11,14 +11,21 @@ export function defaultState() {
       name: "Yate Artificial Grass", vat: true,
       phone: "01454 537330", email: "", address: "", regNo: "",
       quoteValidDays: 30,
-      quoteTerms: "Prices include supply, installation and removal of waste. A 25% deposit confirms the booking; the balance is due on completion. Workmanship guaranteed for 5 years. This quote is valid for 30 days."
+      quoteTerms: "Prices include supply, installation and removal of waste. A 25% deposit confirms the booking; the balance is due on completion. Workmanship guaranteed for 5 years. This quote is valid for 30 days.",
+      legalName: "Yate Artificial Grass Ltd",
+      bankName: "Lloyds Bank", sortCode: "30-99-50", accountNo: "56818060",
+      vatNo: "460380900",
+      invoiceTerms: "PAYMENT DUE ON RECEIPT OF INVOICE",
+      invoiceFoot: "OR CASH + CHEQUE ACCEPTED",
+      nextInvoiceNo: 261
     },
     rates: structuredClone(DEFAULT_RATES),
     crews: [
       { id: "c1", name: "Crew A", colour: CREW_COLOURS[0] },
       { id: "c2", name: "Crew B", colour: CREW_COLOURS[1] }
     ],
-    leads: []
+    leads: [],
+    invoices: []
   };
 }
 
@@ -31,15 +38,46 @@ export function normalise(state) {
   if (!Array.isArray(s.rates.grasses) || !s.rates.grasses.length) s.rates.grasses = base.rates.grasses;
   if (!Array.isArray(s.crews)) s.crews = base.crews;
   if (!Array.isArray(s.leads)) s.leads = [];
+  if (!Array.isArray(s.invoices)) s.invoices = [];
   for (const l of s.leads) {
     l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= []; l.payment ??= {};
     l.channel ??= "manual";
     l.lostReason ??= "";
   }
+  for (const inv of s.invoices) {
+    inv.billTo ??= { name: "", address: "" };
+    inv.description ??= "Artificial Grass Supply + fit";
+    if (inv.amountIncVat == null) inv.amountIncVat = true;
+    if (inv.vat == null) inv.vat = true;
+  }
   return s;
 }
 
 const newId = () => (globalThis.crypto?.randomUUID ? crypto.randomUUID() : uid());
+
+/** A blank invoice, optionally pre-filled from a won/finished job. */
+export function newInvoice(state, lead = null) {
+  const number = Math.max(261, Math.floor(Number(state.business?.nextInvoiceNo) || 261));
+  state.business.nextInvoiceNo = number + 1;
+  const inv = {
+    id: newId(),
+    number,
+    date: todayISO(),
+    billTo: { name: "", address: "" },
+    leadId: lead?.id ?? null,
+    description: "Artificial Grass Supply + fit",
+    amount: "",
+    amountIncVat: true,
+    vat: state.business?.vat !== false,
+    paid: false, paidAt: null,
+    createdAt: new Date().toISOString()
+  };
+  if (lead) {
+    inv.billTo.name = lead.name || "";
+    inv.billTo.address = [lead.address, lead.postcode].filter(Boolean).join("\n");
+  }
+  return inv;
+}
 
 export function newLead(rates) {
   const today = todayISO();

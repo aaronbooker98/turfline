@@ -37,6 +37,14 @@ create table if not exists public.leads (
 create index if not exists leads_stage_idx    on public.leads ((data->>'stage'));
 create index if not exists leads_jobstart_idx on public.leads ((data->'job'->>'startDate'));
 
+-- Invoices, stored whole as JSON in `data` (number, date, billTo{}, description,
+-- amount, vat flags, paid ...). Office only.
+create table if not exists public.invoices (
+  id         uuid primary key default gen_random_uuid(),
+  data       jsonb not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
 -- Maps a logged-in user to a role. Filled automatically by the trigger below.
 create table if not exists public.profiles (
   id   uuid primary key references auth.users(id) on delete cascade,
@@ -84,9 +92,11 @@ begin new.updated_at = now(); return new; end; $$;
 drop trigger if exists leads_touch    on public.leads;
 drop trigger if exists crews_touch    on public.crews;
 drop trigger if exists settings_touch on public.app_settings;
+drop trigger if exists invoices_touch on public.invoices;
 create trigger leads_touch    before update on public.leads       for each row execute function public.touch_updated_at();
 create trigger crews_touch    before update on public.crews       for each row execute function public.touch_updated_at();
 create trigger settings_touch before update on public.app_settings for each row execute function public.touch_updated_at();
+create trigger invoices_touch before update on public.invoices     for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------
 -- Row-level security
@@ -97,12 +107,14 @@ create trigger settings_touch before update on public.app_settings for each row 
 alter table public.app_settings enable row level security;
 alter table public.crews        enable row level security;
 alter table public.leads        enable row level security;
+alter table public.invoices     enable row level security;
 alter table public.profiles     enable row level security;
 
 drop policy if exists office_settings   on public.app_settings;
 drop policy if exists office_crews      on public.crews;
 drop policy if exists fitters_read_crews on public.crews;
 drop policy if exists office_leads      on public.leads;
+drop policy if exists office_invoices   on public.invoices;
 drop policy if exists own_profile       on public.profiles;
 
 create policy office_settings on public.app_settings for all
@@ -115,6 +127,9 @@ create policy fitters_read_crews on public.crews for select
   using (public.app_role() in ('office','fitters'));
 
 create policy office_leads on public.leads for all
+  using (public.app_role() = 'office') with check (public.app_role() = 'office');
+
+create policy office_invoices on public.invoices for all
   using (public.app_role() = 'office') with check (public.app_role() = 'office');
 
 create policy own_profile on public.profiles for select
@@ -182,6 +197,7 @@ begin
   begin alter publication supabase_realtime add table public.leads;        exception when others then null; end;
   begin alter publication supabase_realtime add table public.crews;        exception when others then null; end;
   begin alter publication supabase_realtime add table public.app_settings; exception when others then null; end;
+  begin alter publication supabase_realtime add table public.invoices;     exception when others then null; end;
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -189,7 +205,9 @@ end $$;
 -- ---------------------------------------------------------------------------
 insert into public.app_settings (id, business, rates) values (
   1,
-  '{"name":"Yate Artificial Grass","vat":true}',
+  '{"name":"Yate Artificial Grass","vat":true,"legalName":"Yate Artificial Grass Ltd",
+    "bankName":"Lloyds Bank","sortCode":"30-99-50","accountNo":"56818060","vatNo":"460380900",
+    "invoiceTerms":"PAYMENT DUE ON RECEIPT OF INVOICE","invoiceFoot":"OR CASH + CHEQUE ACCEPTED","nextInvoiceNo":261}',
   '{"grasses":[{"name":"Standard 30mm","rate":12.0}],
     "wastePct":10,"type1":6.0,"stoneDust":2.25,"muckaway":4.25,"membrane":0.45,"sand":0.96,"joins":0.25,"edging":2.6,
     "labour":10.5,"vans":0.66,"sundries":1.5,"marginPct":40,"vatPct":20,"m2PerCrewDay":40,

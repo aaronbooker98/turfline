@@ -57,6 +57,19 @@ export function paymentState(lead, total) {
   };
 }
 
+/** Net / VAT / total for an invoice. `amount` is what was typed; `amountIncVat`
+ *  says whether that figure already includes VAT; `vat:false` zero-rates it. */
+export function invoiceTotals(inv, vatPct = 20) {
+  const amount = num(inv?.amount, 0);
+  const rate = inv?.vat === false ? 0 : num(vatPct, 0);
+  if (!rate) return { net: amount, vat: 0, total: amount, rate: 0 };
+  if (inv?.amountIncVat !== false) {
+    const net = amount / (1 + rate / 100);
+    return { net, vat: amount - net, total: amount, rate };
+  }
+  return { net: amount, vat: amount * rate / 100, total: amount * (1 + rate / 100), rate };
+}
+
 export const DEFAULT_RATES = {
   grasses: [
     { name: "Standard 30mm", rate: 12.0 }

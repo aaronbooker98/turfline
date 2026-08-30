@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
+import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, invoiceTotals, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
 const rates = structuredClone(DEFAULT_RATES);
@@ -76,6 +76,17 @@ test("aggregate tonnage comes from area × depth × density", () => {
   assert.equal(aggregatesFor(0, rates).type1, 0);
   // deeper sub-base ⇒ more tonnes
   assert.ok(aggregatesFor(40, { ...rates, type1Depth: 150 }).type1 > a.type1);
+});
+
+test("invoiceTotals backs VAT out of an inc-VAT figure, or adds it to an ex-VAT one", () => {
+  const inc = invoiceTotals({ amount: 2750, amountIncVat: true, vat: true }, 20);
+  assert.equal(inc.net.toFixed(2), "2291.67");
+  assert.equal(inc.vat.toFixed(2), "458.33");
+  assert.equal(inc.total.toFixed(2), "2750.00");
+  const ex = invoiceTotals({ amount: 2000, amountIncVat: false, vat: true }, 20);
+  assert.equal(ex.total.toFixed(2), "2400.00");
+  const none = invoiceTotals({ amount: 2000, vat: false }, 20);
+  assert.deepEqual([none.net, none.vat, none.total], [2000, 0, 2000]);
 });
 
 test("sand is one 25kg bag per 4 m², rounded up", () => {

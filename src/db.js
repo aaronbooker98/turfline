@@ -44,17 +44,19 @@ const leadToRow = (lead) => { const { id, ...data } = lead; return { id, data };
 /* ---------------- office: full state ---------------- */
 
 export async function loadOfficeState() {
-  const [settings, crews, leads] = await Promise.all([
+  const [settings, crews, leads, invoices] = await Promise.all([
     supabase.from("app_settings").select("business,rates").eq("id", 1).single(),
     supabase.from("crews").select("id,name,colour,sort").order("sort"),
-    supabase.from("leads").select("id,data").order("updated_at", { ascending: false })
+    supabase.from("leads").select("id,data").order("updated_at", { ascending: false }),
+    supabase.from("invoices").select("id,data").order("updated_at", { ascending: false })
   ]);
   for (const r of [settings, crews, leads]) if (r.error) throw new Error(r.error.message);
   return {
     business: settings.data.business,
     rates: settings.data.rates,
     crews: crews.data.map((c) => ({ id: c.id, name: c.name, colour: c.colour })),
-    leads: leads.data.map(rowToLead)
+    leads: leads.data.map(rowToLead),
+    invoices: invoices.error ? [] : invoices.data.map(rowToLead)
   };
 }
 
@@ -84,6 +86,15 @@ export async function pushState(state, prev) {
   for (const id of prevLead.keys())
     if (!nextLeadIds.has(id)) ops.push(() => supabase.from("leads").delete().eq("id", id));
 
+  const prevInv = new Map((prev?.invoices ?? []).map((i) => [i.id, json(i)]));
+  const nextInvIds = new Set((state.invoices ?? []).map((i) => i.id));
+  const invRows = [];
+  for (const i of state.invoices ?? [])
+    if (prevInv.get(i.id) !== json(i)) invRows.push(leadToRow(i));
+  if (invRows.length) ops.push(() => supabase.from("invoices").upsert(invRows, { onConflict: "id" }));
+  for (const id of prevInv.keys())
+    if (!nextInvIds.has(id)) ops.push(() => supabase.from("invoices").delete().eq("id", id));
+
   for (const run of ops) {
     const { error } = await run();
     if (error) throw new Error(error.message);
@@ -96,6 +107,7 @@ export function subscribeOffice(onChange) {
     .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "crews" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, onChange)
     .subscribe();
   return () => supabase.removeChannel(ch);
 }
