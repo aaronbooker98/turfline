@@ -19,7 +19,10 @@ The live site rebuilds itself about a minute later.
 - **Today** — chase list, cold-quote flag, installs this week
 - **Leads** — sortable/filterable table of every enquiry
 - **Pipeline** — board by stage; drag a card between columns to move it along
-- **Schedule** — crews across a week, clash detection
+- **Schedule** — Week grid (default) or Month calendar, toggle at the top, clash detection
+- **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
+  each groundworks line switchable per job, then a Margin % → price, then VAT.
+  Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.
 - **Analytics** — enquiry→won funnel, win rate, avg job value & days to close,
   revenue by month, lead-source performance
 - **Job sheets** — phone view for fitters
@@ -48,6 +51,9 @@ Supabase project `jhkhchhszwmtlhnhmowr`. Live at crm.yateartificialgrass.com.
 - Login creds live in Supabase dashboard -> Authentication -> Users.
 
 Loose ends:
+- [ ] **Run the pricing reset SQL** (Supabase → SQL Editor) so the live rates match
+      the new per-m² model — the block is in the 2026-08-30 pricing change. Until then
+      the live app still carries the old Meadow/Fairway/Premier rates.
 - [ ] Change the fitters password from "YAG123" to something stronger
       (Supabase -> Auth -> Users -> the fitters row -> reset password).
 - [ ] Settings still has "Load example data" / "Delete every record" — office only

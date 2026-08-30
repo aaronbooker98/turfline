@@ -5,10 +5,10 @@ import { icon } from "../icons.js";
 
 export function renderSchedule(ctx) {
   const { ui } = ctx;
-  const view = ui.schedView === "week" ? "week" : "month";
+  const view = ui.schedView === "month" ? "month" : "week";
   const toggle = `<div class="segbtns">
-    <button class="segbtn" data-act="sched-view" data-view="month" aria-pressed="${view === "month"}">Month</button>
     <button class="segbtn" data-act="sched-view" data-view="week" aria-pressed="${view === "week"}">Week</button>
+    <button class="segbtn" data-act="sched-view" data-view="month" aria-pressed="${view === "month"}">Month</button>
   </div>`;
   return (view === "month" ? renderMonth(ctx, toggle) : renderWeek(ctx, toggle)) + unbookedCard(ctx);
 }

@@ -21,14 +21,22 @@ export function renderSettings(ctx) {
           <input class="inp" data-grass-name="${i}" value="${esc(g.name)}">
           <input class="inp num" type="number" step="0.01" data-grass-rate="${i}" value="${esc(g.rate)}"></div>`).join("")}
         <div style="margin:10px 0 18px"><button class="btn sm" data-act="add-grass">${icon("plus")}Add a grass</button></div>
-        ${rateRow(r, "subBase", "Sub-base & prep", "£ per m² — dig out, MOT type 1, grano, compaction")}
-        ${rateRow(r, "labour", "Installation labour", "£ per m²")}
-        ${rateRow(r, "membrane", "Weed membrane", "£ per m²")}
-        ${rateRow(r, "sand", "Silica sand infill", "£ per m²")}
-        ${rateRow(r, "edging", "Timber edging", "£ per linear m")}
-        ${rateRow(r, "skip", "Skip hire", "£ per job", "1")}
-        ${rateRow(r, "wastePct", "Default waste", "% added to the grass ordered", "1")}
+        <div class="lbl">Groundworks & materials (£ per m²)</div>
+        ${rateRow(r, "type1", "Type 1 sub-base", "75mm")}
+        ${rateRow(r, "stoneDust", "Stone dust blinding", "25mm")}
+        ${rateRow(r, "muckaway", "Excavate & cart waste away", "muck-away")}
+        ${rateRow(r, "membrane", "Weed membrane", "")}
+        ${rateRow(r, "sand", "Sand infill", "kiln-dried")}
+        ${rateRow(r, "joins", "Joining tape & glue", "")}
+        ${rateRow(r, "edging", "Edging", "")}
+        <div class="lbl" style="margin-top:14px">Labour & running costs (£ per m²)</div>
+        ${rateRow(r, "labour", "Crew labour", "£420 crew day / 40 m²")}
+        ${rateRow(r, "vans", "Vans / fuel", "")}
+        ${rateRow(r, "sundries", "Sundries", "")}
+        <div class="lbl" style="margin-top:14px">Margin, VAT & output</div>
+        ${rateRow(r, "marginPct", "Margin", "% added to cost to get the price (ex VAT)", "1")}
         ${rateRow(r, "vatPct", "VAT", "%", "1")}
+        ${rateRow(r, "wastePct", "Grass waste allowance", "% extra grass ordered for cuts", "1")}
         ${rateRow(r, "m2PerCrewDay", "Crew output", "m² per crew per day — sets job length", "1")}
       </div>
     </section>

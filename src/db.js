@@ -114,7 +114,7 @@ export async function loadFittersState() {
     .map((name) => ({ name, rate: 0 }));
   return {
     business: { name: "Yate Artificial Grass", vat: false },
-    rates: { grasses, wastePct: 10, m2PerCrewDay: 35 },
+    rates: { grasses, wastePct: 10, m2PerCrewDay: 40 },
     crews: crews.data.map((c) => ({ id: c.id, name: c.name, colour: c.colour })),
     leads: rows.map((r) => ({
       id: r.id, name: r.name, address: r.address, postcode: r.postcode, phone: r.phone,
@@ -127,11 +127,9 @@ export async function loadFittersState() {
 
 const numOrEmpty = (v) => (v == null || v === "" ? "" : Number(v));
 function coerceSurvey(s = {}) {
-  return {
-    areaM2: numOrEmpty(s.areaM2), grassSpec: s.grassSpec ?? "", edgingM: numOrEmpty(s.edgingM),
-    wastePct: numOrEmpty(s.wastePct), skip: !!s.skip, membrane: s.membrane !== false,
-    sand: s.sand !== false, notes: s.notes ?? "", accessPct: 0
-  };
+  // Carry the raw survey through (works toggles are booleans, absent = on) and
+  // normalise just the fields the job sheet / materials list read directly.
+  return { ...s, areaM2: numOrEmpty(s.areaM2), grassSpec: s.grassSpec ?? "", notes: s.notes ?? "", accessPct: 0 };
 }
 function coerceJob(j = {}) {
   return {

@@ -59,23 +59,42 @@ export function paymentState(lead, total) {
 
 export const DEFAULT_RATES = {
   grasses: [
-    { name: "Meadow 30mm", rate: 14.5 },
-    { name: "Fairway 35mm", rate: 17.9 },
-    { name: "Premier 40mm", rate: 21.5 }
+    { name: "Standard 30mm", rate: 12.0 }
   ],
-  wastePct: 10,      // % extra grass ordered to allow for cuts
-  subBase: 12.0,     // £/m² — excavation, MOT type 1, grano, compaction
-  labour: 18.0,      // £/m²
-  membrane: 1.6,     // £/m²
-  sand: 1.2,         // £/m² — silica infill
-  edging: 6.5,       // £/linear m
-  skip: 260,         // £/job
+  wastePct: 10,      // % extra grass ordered to allow for cuts (materials list only)
+  // Groundworks & materials — £ per m² of area. Each can be switched off per job.
+  type1: 6.0,        // Type 1 sub-base (75mm)
+  stoneDust: 2.25,   // Stone dust blinding (25mm)
+  muckaway: 4.25,    // Excavate & cart waste away (6.8t)
+  membrane: 0.45,    // Weed membrane
+  sand: 0.96,        // Kiln-dried sand infill
+  joins: 0.25,       // Joining tape & glue
+  edging: 2.6,       // Edging
+  // Always on the job — £ per m²
+  labour: 10.5,      // Crew labour (£420 per crew day ÷ 40 m²)
+  vans: 0.66,        // Vans / fuel
+  sundries: 1.5,     // Sundries
+  marginPct: 40,     // markup added to cost to reach the price (ex VAT)
   vatPct: 20,
-  m2PerCrewDay: 35   // drives the estimated job length
+  m2PerCrewDay: 40   // drives the estimated job length
 };
 
+// The switchable groundworks/materials lines, in the order they appear on a quote.
+// Each is keyed the same in `rates` (£/m²) and in `survey` (true/false, absent = on).
+export const WORKS = [
+  ["type1", "Type 1 sub-base"],
+  ["stoneDust", "Stone dust blinding"],
+  ["muckaway", "Excavate & cart waste away"],
+  ["membrane", "Weed membrane"],
+  ["sand", "Sand infill"],
+  ["joins", "Joining tape & glue"],
+  ["edging", "Edging"]
+];
+export const workIsOn = (survey, key) => (survey ?? {})[key] !== false;
+
 /**
- * Price a job from its survey.
+ * Price a job from its survey. Everything is £/m² of surveyed area; the sum of
+ * the per-m² lines is the cost, then a margin % is added to reach the price.
  * @param {object} lead
  * @param {object} rates
  * @param {boolean} vatRegistered — when false, VAT is zero regardless of vatPct
@@ -83,52 +102,67 @@ export const DEFAULT_RATES = {
 export function quoteFor(lead, rates, vatRegistered = true) {
   const s = lead.survey ?? {};
   const area = num(s.areaM2, 0);
-  const wastePct = s.wastePct == null ? num(rates.wastePct, 0) : num(s.wastePct, 0);
-  const billable = area * (1 + wastePct / 100);
+  const billable = area * (1 + num(rates.wastePct, 0) / 100);
   const grass = rates.grasses.find((g) => g.name === s.grassSpec) ?? rates.grasses[0] ?? { name: "—", rate: 0 };
 
   const lines = [];
-  const add = (label, detail, amt) => { if (amt > 0.004) lines.push({ label, detail, amt }); };
+  const per = (rate) => `${area.toFixed(1)} m² @ £${num(rate).toFixed(2)}`;
+  const cost = (label, rate) => { const amt = area * num(rate); if (amt > 0.004) lines.push({ label, detail: per(rate), amt, grp: "cost" }); };
 
-  add(`Grass — ${grass.name}`, `${billable.toFixed(1)} m² @ £${grass.rate.toFixed(2)}`, billable * grass.rate);
-  add("Sub-base & prep", `${area.toFixed(1)} m² @ £${num(rates.subBase).toFixed(2)}`, area * num(rates.subBase));
-  if (s.membrane !== false) add("Weed membrane", `${area.toFixed(1)} m²`, area * num(rates.membrane));
-  if (s.sand !== false) add("Silica sand infill", `${area.toFixed(1)} m²`, area * num(rates.sand));
-  const edge = num(s.edgingM, 0);
-  add("Timber edging", `${edge.toFixed(1)} m @ £${num(rates.edging).toFixed(2)}`, edge * num(rates.edging));
-  if (s.skip) add("Skip hire & waste removal", "", num(rates.skip));
-  add("Installation labour", `${area.toFixed(1)} m² @ £${num(rates.labour).toFixed(2)}`, area * num(rates.labour));
-  const extra = num(s.extraCost, 0);
-  if (extra) lines.push({ label: s.extraLabel || "Additional works", detail: "", amt: extra });
+  cost(`Grass — ${grass.name}`, grass.rate);
+  for (const [key, label] of WORKS) if (workIsOn(s, key)) cost(label, rates[key]);
+  cost("Crew labour", rates.labour);
+  cost("Vans & fuel", rates.vans);
+  cost("Sundries", rates.sundries);
 
-  let net = lines.reduce((t, l) => t + l.amt, 0);
+  const costTotal = lines.reduce((t, l) => t + l.amt, 0);
+  const marginPct = num(rates.marginPct, 0);
+  const margin = costTotal * marginPct / 100;
+  if (margin > 0.004) lines.push({ label: "Margin", detail: `${marginPct}%`, amt: margin, grp: "after" });
+
   const accessPct = num(s.accessPct, 0);
-  const access = net * accessPct / 100;
-  if (access > 0.004) { lines.push({ label: "Difficult access surcharge", detail: `${accessPct}%`, amt: access }); net += access; }
-  const discount = num(s.discount, 0);
-  if (discount) { lines.push({ label: "Discount", detail: "", amt: -discount }); net -= discount; }
+  const access = (costTotal + margin) * accessPct / 100;
+  if (access > 0.004) lines.push({ label: "Difficult access surcharge", detail: `${accessPct}%`, amt: access, grp: "after" });
 
+  const coreNet = costTotal + margin + access;
+  const extra = num(s.extraCost, 0);
+  const discount = num(s.discount, 0);
+  if (extra) lines.push({ label: s.extraLabel || "Additional works", detail: "", amt: extra, grp: "after" });
+  if (discount) lines.push({ label: "Discount", detail: "", amt: -discount, grp: "after" });
+
+  const net = coreNet + extra - discount;
   const vatPct = vatRegistered ? num(rates.vatPct, 0) : 0;
   const vat = net * vatPct / 100;
+  const days = estimateDays(area, rates);
 
-  return { lines, net, vat, vatPct, total: net + vat, area, billable, grass, days: estimateDays(area, rates) };
+  // What the customer sees on the printed quote: one supply-&-install line.
+  const custLines = [{
+    label: `Supply & installation of ${area || 0} m² artificial grass${grass.name && grass.name !== "—" ? ` (${grass.name})` : ""}`,
+    detail: area ? `about ${days} working day${days > 1 ? "s" : ""} on site` : "",
+    amt: coreNet
+  }];
+  if (extra) custLines.push({ label: s.extraLabel || "Additional works", detail: "", amt: extra });
+  if (discount) custLines.push({ label: "Discount", detail: "", amt: -discount });
+
+  return { lines, custLines, cost: costTotal, margin, net, vat, vatPct, total: net + vat, area, billable, grass, days };
 }
 
 export const estimateDays = (area, rates) =>
-  Math.max(1, Math.ceil(num(area, 0) / Math.max(1, num(rates.m2PerCrewDay, 35))));
+  Math.max(1, Math.ceil(num(area, 0) / Math.max(1, num(rates.m2PerCrewDay, 40))));
 
 /** Van load list for a job sheet. */
 export function materialsFor(lead, rates, vatRegistered = true) {
   const q = quoteFor(lead, rates, vatRegistered);
   const s = lead.survey ?? {};
-  const items = [
-    { label: q.grass.name, qty: `${q.billable.toFixed(1)} m²` },
-    { label: "Sub-base aggregate", qty: `${(q.area * 0.09).toFixed(1)} tonnes approx` }
-  ];
-  if (s.membrane !== false) items.push({ label: "Weed membrane", qty: `${q.area.toFixed(0)} m²` });
-  if (s.sand !== false) items.push({ label: "Silica sand", qty: `${Math.ceil(q.area * 5 / 25)} × 25kg bags` });
-  if (num(s.edgingM, 0)) items.push({ label: "Timber edging", qty: `${num(s.edgingM)} m` });
-  if (s.skip) items.push({ label: "Skip", qty: "booked" });
+  const on = (k) => workIsOn(s, k);
+  const items = [{ label: q.grass.name, qty: `${q.billable.toFixed(1)} m²` }];
+  if (on("type1")) items.push({ label: "Type 1 sub-base", qty: `${(q.area * 0.13).toFixed(1)} t approx` });
+  if (on("stoneDust")) items.push({ label: "Stone dust", qty: `${(q.area * 0.04).toFixed(1)} t approx` });
+  if (on("membrane")) items.push({ label: "Weed membrane", qty: `${q.area.toFixed(0)} m²` });
+  if (on("sand")) items.push({ label: "Kiln-dried sand", qty: `${Math.ceil(q.area * 5 / 25)} × 25kg bags` });
+  if (on("joins")) items.push({ label: "Joining tape & glue", qty: "as needed" });
+  if (on("edging")) items.push({ label: "Edging", qty: `${Math.ceil(4 * Math.sqrt(q.area || 0))} m approx` });
+  if (on("muckaway")) items.push({ label: "Muck-away", qty: `${(q.area * 0.16).toFixed(1)} t approx` });
   return items;
 }
 

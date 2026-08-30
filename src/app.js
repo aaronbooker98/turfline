@@ -25,7 +25,7 @@ const ui = {
   openId: null,
   expandedJob: null,
   weekStart: mondayOf(todayISO()),
-  schedView: "month",
+  schedView: "week",
   monthStart: firstOfMonth(todayISO()),
   search: "",
   showClosed: false,
@@ -364,7 +364,7 @@ document.addEventListener("click", async (e) => {
       save(); render();
       break;
     }
-    case "add-grass": state.rates.grasses.push({ name: "New grass", rate: 15 }); save(); render(); break;
+    case "add-grass": state.rates.grasses.push({ name: "New grass", rate: 12 }); save(); render(); break;
     case "print-quote": {
       const l = leadById(el.dataset.id);
       if (!l) break;

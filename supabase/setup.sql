@@ -131,17 +131,9 @@ language sql stable security definer set search_path = public as $$
   select
     l.id,
     l.data->>'name', l.data->>'address', l.data->>'postcode', l.data->>'phone',
-    jsonb_build_object(
-      'areaM2',    l.data->'survey'->>'areaM2',
-      'grassSpec', l.data->'survey'->>'grassSpec',
-      'edgingM',   l.data->'survey'->>'edgingM',
-      'wastePct',  coalesce(l.data->'survey'->>'wastePct',
-                            (select rates->>'wastePct' from public.app_settings where id = 1)),
-      'skip',      l.data->'survey'->'skip',
-      'membrane',  l.data->'survey'->'membrane',
-      'sand',      l.data->'survey'->'sand',
-      'notes',     l.data->'survey'->>'notes'
-    ),
+    -- the survey minus any money: area, grass name, site notes and the works
+    -- toggles (booleans, absent = included). extraCost / discount stripped out.
+    (coalesce(l.data->'survey', '{}'::jsonb) - 'extraCost' - 'discount' - 'extraLabel'),
     jsonb_build_object(
       'crewId',      l.data->'job'->>'crewId',
       'startDate',   l.data->'job'->>'startDate',
@@ -198,8 +190,9 @@ end $$;
 insert into public.app_settings (id, business, rates) values (
   1,
   '{"name":"Yate Artificial Grass","vat":true}',
-  '{"grasses":[{"name":"Meadow 30mm","rate":14.5},{"name":"Fairway 35mm","rate":17.9},{"name":"Premier 40mm","rate":21.5}],
-    "wastePct":10,"subBase":12,"labour":18,"membrane":1.6,"sand":1.2,"edging":6.5,"skip":260,"vatPct":20,"m2PerCrewDay":35}'
+  '{"grasses":[{"name":"Standard 30mm","rate":12.0}],
+    "wastePct":10,"type1":6.0,"stoneDust":2.25,"muckaway":4.25,"membrane":0.45,"sand":0.96,"joins":0.25,"edging":2.6,
+    "labour":10.5,"vans":0.66,"sundries":1.5,"marginPct":40,"vatPct":20,"m2PerCrewDay":40}'
 ) on conflict (id) do nothing;
 
 insert into public.crews (id, name, colour, sort) values

@@ -1,15 +1,18 @@
 // The record editor: one enquiry from first call to aftercare.
 import { esc, num, money, money2, fmtDate, dayDiff, todayISO } from "../util.js";
-import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, LOST_REASONS, dedupeMatches, paymentState } from "../model.js";
+import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, LOST_REASONS, dedupeMatches, paymentState, WORKS, workIsOn } from "../model.js";
 import { icon } from "../icons.js";
 
 /** The quote breakdown, also re-rendered on its own while typing. */
 export function quoteBreakdown(lead, state) {
   const q = quoteFor(lead, state.rates, state.business.vat);
   if (!(q.area > 0)) return `<div class="empty" style="padding:18px">Enter an area to build the quote.</div>`;
+  const row = (l) => `<div class="qline"><span>${esc(l.label)}${l.detail ? ` <span class="det">${esc(l.detail)}</span>` : ""}</span><span>${money2(l.amt)}</span></div>`;
   return [
-    ...q.lines.map((l) => `<div class="qline"><span>${esc(l.label)}${l.detail ? ` <span class="det">${esc(l.detail)}</span>` : ""}</span><span>${money2(l.amt)}</span></div>`),
-    `<div class="qline sub"><span>Net</span><span>${money2(q.net)}</span></div>`,
+    ...q.lines.filter((l) => l.grp === "cost").map(row),
+    `<div class="qline sub"><span>Cost</span><span>${money2(q.cost)}</span></div>`,
+    ...q.lines.filter((l) => l.grp === "after").map(row),
+    `<div class="qline sub"><span>Net${q.vatPct ? " (ex VAT)" : ""}</span><span>${money2(q.net)}</span></div>`,
     q.vatPct ? `<div class="qline muted"><span>VAT @ ${q.vatPct}%</span><span>${money2(q.vat)}</span></div>` : "",
     `<div class="qline tot"><span>Total</span><span>${money2(q.total)}</span></div>`,
     `<div class="qline muted"><span>${q.billable.toFixed(1)} m² of grass to order · about ${q.days} crew day${q.days > 1 ? "s" : ""}</span><span>${money2(q.area ? q.total / q.area : 0)}/m²</span></div>`
@@ -97,15 +100,11 @@ export function renderDrawer(ctx, lead) {
           <select class="inp" data-f="survey.grassSpec"${dis}>${state.rates.grasses.map((g) =>
             `<option${g.name === lead.survey.grassSpec ? " selected" : ""}>${esc(g.name)}</option>`).join("")}</select></div>
       </div>
-      <div class="grid3">
-        ${field("Edging (m)", "survey.edgingM", lead.survey.edgingM, "number", 'step="0.5"')}
-        ${field("Waste %", "survey.wastePct", lead.survey.wastePct ?? state.rates.wastePct, "number", 'step="1"')}
-        ${field("Access surcharge %", "survey.accessPct", lead.survey.accessPct ?? 0, "number", 'step="1"')}
-      </div>
+      ${field("Difficult access surcharge %", "survey.accessPct", lead.survey.accessPct ?? 0, "number", 'step="1"')}
+      <div class="lbl" style="margin-top:6px">Works included (untick anything this job doesn't need)</div>
       <div class="checks">
-        <label><input type="checkbox" data-f="survey.skip"${lead.survey.skip ? " checked" : ""}${dis}> Skip needed</label>
-        <label><input type="checkbox" data-f="survey.membrane"${lead.survey.membrane !== false ? " checked" : ""}${dis}> Membrane</label>
-        <label><input type="checkbox" data-f="survey.sand"${lead.survey.sand !== false ? " checked" : ""}${dis}> Sand infill</label>
+        ${WORKS.map(([key, label]) =>
+          `<label><input type="checkbox" data-f="survey.${key}"${workIsOn(lead.survey, key) ? " checked" : ""}${dis}> ${esc(label)}</label>`).join("")}
       </div>
       <div class="grid2">${field("Extra works label", "survey.extraLabel", lead.survey.extraLabel)}${field("Extra works £", "survey.extraCost", lead.survey.extraCost, "number", 'step="1"')}</div>
       ${field("Discount £", "survey.discount", lead.survey.discount, "number", 'step="1"')}

@@ -52,7 +52,7 @@ export function newLead(rates) {
     nextAction: addDays(today, 1),
     nextNote: "Call to qualify and book survey",
     lostReason: "",
-    survey: { areaM2: "", grassSpec: rates.grasses[0]?.name, wastePct: rates.wastePct, edgingM: "", skip: false, accessPct: 0, notes: "" },
+    survey: { areaM2: "", grassSpec: rates.grasses[0]?.name, accessPct: 0, notes: "" },
     quote: {}, job: {}, payment: {},
     activity: [{ ts: new Date().toISOString(), text: "Lead created" }]
   };

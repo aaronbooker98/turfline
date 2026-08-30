@@ -72,17 +72,16 @@ export function buildQuoteDoc(lead, state, { logoUrl } = {}) {
     <table>
       <thead><tr><th>Item</th><th class="r">Amount</th></tr></thead>
       <tbody>
-        ${q.lines.map(line).join("")}
-        <tr class="sub"><td>Net</td><td class="r">${money2(q.net)}</td></tr>
+        ${q.custLines.map(line).join("")}
+        <tr class="sub"><td>Net${b.vat ? " (ex VAT)" : ""}</td><td class="r">${money2(q.net)}</td></tr>
         ${q.vatPct ? `<tr class="vat"><td>VAT @ ${q.vatPct}%</td><td class="r">${money2(q.vat)}</td></tr>` : ""}
         <tr class="tot"><td>Total${b.vat ? " (inc VAT)" : ""}</td><td class="r">${money2(q.total)}</td></tr>
       </tbody>
     </table>
 
     <div class="spec">
-      <div><b>Area</b>${q.area} m² surveyed${q.billable ? ` · ${q.billable.toFixed(1)} m² grass ordered` : ""}</div>
+      <div><b>Area</b>${q.area} m²</div>
       <div><b>Grass</b>${esc(q.grass.name)}</div>
-      ${lead.survey?.edgingM ? `<div><b>Edging</b>${esc(lead.survey.edgingM)} m</div>` : ""}
       <div><b>On site</b>about ${q.days} working day${q.days > 1 ? "s" : ""}</div>
       ${lead.survey?.notes ? `<div style="margin-top:8px"><b>Notes</b>${esc(lead.survey.notes)}</div>` : ""}
     </div>

@@ -6,22 +6,31 @@ import { addDays, todayISO } from "../src/util.js";
 const rates = structuredClone(DEFAULT_RATES);
 const lead = (survey = {}, rest = {}) => ({
   id: "x", stage: "quoted", stageAt: todayISO(), nextAction: null,
-  survey: { grassSpec: "Fairway 35mm", ...survey }, quote: {}, job: {}, activity: [], ...rest
+  survey: { grassSpec: "Standard 30mm", ...survey }, quote: {}, job: {}, activity: [], ...rest
 });
 
-test("prices a job from area, waste, materials and labour", () => {
-  const q = quoteFor(lead({ areaM2: 64, edgingM: 32, skip: true }), rates);
-  // 64 m² + 10% waste = 70.4 m² of grass at £17.90
-  assert.equal(q.billable.toFixed(1), "70.4");
-  assert.equal(q.net.toFixed(2), "3827.36");
-  assert.equal(q.vat.toFixed(2), "765.47");
-  assert.equal(q.total.toFixed(2), "4592.83");
+test("prices a job from a per-m² cost stack plus a margin", () => {
+  const q = quoteFor(lead({ areaM2: 40 }), rates);
+  // 40 m² × £41.42/m² cost, + 40% margin, + 20% VAT
+  assert.equal(q.cost.toFixed(2), "1656.80");
+  assert.equal(q.margin.toFixed(2), "662.72");
+  assert.equal(q.net.toFixed(2), "2319.52");
+  assert.equal(q.vat.toFixed(2), "463.90");
+  assert.equal(q.total.toFixed(2), "2783.42");
 });
 
-test("skips membrane and sand when the survey says so", () => {
+test("the customer quote collapses to a single supply-&-install line", () => {
+  const q = quoteFor(lead({ areaM2: 40 }), rates);
+  assert.equal(q.custLines.length, 1);
+  assert.match(q.custLines[0].label, /Supply & installation of 40 m²/);
+  assert.equal(q.custLines[0].amt.toFixed(2), q.net.toFixed(2));
+});
+
+test("unticking a works item drops its line and its share of margin", () => {
   const withAll = quoteFor(lead({ areaM2: 50 }), rates).net;
   const without = quoteFor(lead({ areaM2: 50, membrane: false, sand: false }), rates).net;
-  assert.equal((withAll - without).toFixed(2), (50 * (rates.membrane + rates.sand)).toFixed(2));
+  assert.equal((withAll - without).toFixed(2),
+    (50 * (rates.membrane + rates.sand) * (1 + rates.marginPct / 100)).toFixed(2));
 });
 
 test("access surcharge applies to the whole job, discount comes off after", () => {
@@ -45,19 +54,23 @@ test("an empty survey prices at zero rather than throwing", () => {
 });
 
 test("job length comes from crew output, rounded up", () => {
-  assert.equal(estimateDays(35, rates), 1);
-  assert.equal(estimateDays(36, rates), 2);
-  assert.equal(estimateDays(180, rates), 6);
+  assert.equal(estimateDays(40, rates), 1);
+  assert.equal(estimateDays(41, rates), 2);
+  assert.equal(estimateDays(200, rates), 5);
   assert.equal(estimateDays(0, rates), 1); // never zero days
 });
 
-test("materials list scales with the job", () => {
-  const items = materialsFor(lead({ areaM2: 50, edgingM: 20, skip: true }), rates);
+test("materials list scales with the job and follows the works toggles", () => {
+  const items = materialsFor(lead({ areaM2: 50 }), rates);
   const labels = items.map((i) => i.label);
-  assert.ok(labels.includes("Sub-base aggregate"));
-  assert.ok(labels.includes("Timber edging"));
-  assert.ok(labels.includes("Skip"));
-  assert.equal(items.find((i) => i.label === "Fairway 35mm").qty, "55.0 m²");
+  assert.ok(labels.includes("Type 1 sub-base"));
+  assert.ok(labels.includes("Edging"));
+  assert.ok(labels.includes("Muck-away"));
+  assert.equal(items.find((i) => i.label === "Standard 30mm").qty, "55.0 m²");
+
+  const trimmed = materialsFor(lead({ areaM2: 50, edging: false, muckaway: false }), rates).map((i) => i.label);
+  assert.ok(!trimmed.includes("Edging"));
+  assert.ok(!trimmed.includes("Muck-away"));
 });
 
 test("follow-up state reads overdue, today and upcoming", () => {
