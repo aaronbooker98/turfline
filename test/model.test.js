@@ -76,6 +76,9 @@ test("aggregate tonnage comes from area × depth × density", () => {
   assert.equal(aggregatesFor(0, rates).type1, 0);
   // deeper sub-base ⇒ more tonnes
   assert.ok(aggregatesFor(40, { ...rates, type1Depth: 150 }).type1 > a.type1);
+  // muck-away follows its own dig-depth setting
+  assert.equal(aggregatesFor(40, { ...rates, muckawayDepth: 200 }).digDepthMm, 200);
+  assert.ok(aggregatesFor(40, { ...rates, muckawayDepth: 200 }).muckaway > a.muckaway);
 });
 
 test("invoiceTotals backs VAT out of an inc-VAT figure, or adds it to an ex-VAT one", () => {

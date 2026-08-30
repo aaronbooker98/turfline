@@ -63,10 +63,14 @@ function invoiceForm(ctx, inv) {
 
     <div class="grid2" style="align-items:start">
       <section class="card">
-        <div class="card-h"><h3>Invoice ${esc(String(inv.number ?? ""))}</h3>
+        <div class="card-h"><h3>Invoice</h3>
           <label style="margin-left:auto;display:flex;gap:7px;align-items:center;font-size:12.5px">
             <input type="checkbox" data-inv="paid"${inv.paid ? " checked" : ""}> Paid</label></div>
         <div class="card-b">
+          <div class="grid2">
+            ${field("Invoice number", "number", inv.number, "number", 'step="1"')}
+            ${field("Invoice date", "date", inv.date, "date")}
+          </div>
           <div class="field"><label class="lbl">Copy details from a job</label>
             <select class="inp" id="inv-fromjob">
               <option value="">— start blank —</option>
@@ -76,7 +80,6 @@ function invoiceForm(ctx, inv) {
           ${field("Bill to — name", "billTo.name", inv.billTo?.name)}
           <div class="field"><label class="lbl">Bill to — address</label>
             <textarea class="inp" data-inv="billTo.address" rows="3">${esc(inv.billTo?.address ?? "")}</textarea></div>
-          ${field("Invoice date", "date", inv.date, "date")}
           ${field("Description", "description", inv.description)}
 
           <div class="grid2">

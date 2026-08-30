@@ -90,8 +90,9 @@ export const DEFAULT_RATES = {
   marginPct: 40,     // markup added to cost to reach the price (ex VAT)
   vatPct: 20,
   m2PerCrewDay: 40,  // drives the estimated job length
-  type1Depth: 75,    // mm — used to work out the aggregate tonnage
-  stoneDustDepth: 25 // mm
+  type1Depth: 75,      // mm — used to work out the aggregate tonnage
+  stoneDustDepth: 25,  // mm
+  muckawayDepth: 150   // mm — total dig-out depth, drives the muck-away tonnage
 };
 
 // Compacted supply density, tonnes per m³.
@@ -103,11 +104,11 @@ export function aggregatesFor(area, rates) {
   const a = Math.max(0, num(area, 0));
   const t1 = num(rates.type1Depth, 75) / 1000;
   const dust = num(rates.stoneDustDepth, 25) / 1000;
-  const strip = 0.04;                             // m — turf + topsoil taken off
+  const digM = (num(rates.muckawayDepth, 0) / 1000) || (t1 + dust + 0.04); // dig-out depth
   const type1 = a * t1 * AGG_DENSITY.type1;
   const stoneDust = a * dust * AGG_DENSITY.stoneDust;
-  const muckaway = a * (t1 + dust + strip) * AGG_DENSITY.spoil;
-  return { type1, stoneDust, muckaway, digDepthMm: Math.round((t1 + dust + strip) * 1000) };
+  const muckaway = a * digM * AGG_DENSITY.spoil;
+  return { type1, stoneDust, muckaway, digDepthMm: Math.round(digM * 1000) };
 }
 
 /** Kiln-dried sand infill: one 25kg bag per 4 m². */

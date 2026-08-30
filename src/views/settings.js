@@ -31,6 +31,7 @@ export function renderSettings(ctx) {
         ${rateRow(r, "edging", "Edging", "")}
         ${rateRow(r, "type1Depth", "Type 1 depth", "mm — sets the tonnage estimate", "5")}
         ${rateRow(r, "stoneDustDepth", "Stone dust depth", "mm", "5")}
+        ${rateRow(r, "muckawayDepth", "Muck-away dig depth", "mm — total dig-out, sets the muck-away tonnage", "5")}
         <div class="lbl" style="margin-top:14px">Labour & running costs (£ per m²)</div>
         ${rateRow(r, "labour", "Crew labour", "£420 crew day / 40 m²")}
         ${rateRow(r, "vans", "Vans / fuel", "")}
