@@ -85,7 +85,8 @@ export const DEFAULT_RATES = {
   edging: 2.6,       // Edging
   // Always on the job — £ per m²
   labour: 10.5,      // Crew labour (£420 per crew day ÷ 40 m²)
-  vans: 0.66,        // Vans / fuel
+  vans: 0.66,        // Vans / fuel — flat £/m² (48 mi/job @ 55p ÷ 40 m²/day)
+  mileageRate: 0.55, // £ per mile — HMRC approved rate, for the "by mileage" option
   sundries: 1.5,     // Sundries
   marginPct: 40,     // markup added to cost to reach the price (ex VAT)
   vatPct: 20,
@@ -157,7 +158,13 @@ export function quoteFor(lead, rates, vatRegistered = true) {
   } else {
     cost("Crew labour", rates.labour);
   }
-  cost("Vans & fuel", rates.vans);
+  // Vans & fuel: a per-job lump (worked out from mileage) overrides the per-m² default.
+  if (s.vanCost != null && s.vanCost !== "") {
+    const amt = num(s.vanCost, 0);
+    if (amt > 0.004) lines.push({ label: "Vans & fuel", detail: s.vanNote || "by mileage", amt, grp: "cost" });
+  } else {
+    cost("Vans & fuel", rates.vans);
+  }
   cost("Sundries", rates.sundries);
 
   const costTotal = lines.reduce((t, l) => t + l.amt, 0);

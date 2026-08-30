@@ -34,7 +34,8 @@ export function renderSettings(ctx) {
         ${rateRow(r, "muckawayDepth", "Muck-away dig depth", "mm — total dig-out, sets the muck-away tonnage", "5")}
         <div class="lbl" style="margin-top:14px">Labour & running costs (£ per m²)</div>
         ${rateRow(r, "labour", "Crew labour", "£420 crew day / 40 m²")}
-        ${rateRow(r, "vans", "Vans / fuel", "")}
+        ${rateRow(r, "vans", "Vans / fuel", "flat rate — or use mileage in the estimator")}
+        ${rateRow(r, "mileageRate", "Mileage rate", "£ per mile — HMRC approved rate is £0.55")}
         ${rateRow(r, "sundries", "Sundries", "")}
         <div class="lbl" style="margin-top:14px">Margin, VAT & output</div>
         ${rateRow(r, "marginPct", "Margin", "% added to cost to get the price (ex VAT)", "1")}

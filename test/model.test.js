@@ -27,6 +27,16 @@ test("a per-job crew day rate × days replaces the per-m² labour line", () => {
   assert.ok(dayRate.lines.some((l) => l.label === "Crew labour" && /3 days @ £500/.test(l.detail)));
 });
 
+test("a van-cost lump replaces the per-m² vans line", () => {
+  const perM2 = quoteFor(lead({ areaM2: 40 }), rates);       // 40 × £0.66 = £26.40
+  const lump = quoteFor(lead({ areaM2: 40, vanCost: 100, vanNote: "24 mi" }), rates);
+  assert.equal((lump.cost - perM2.cost).toFixed(2), (100 - 40 * rates.vans).toFixed(2));
+  assert.ok(lump.lines.some((l) => l.label === "Vans & fuel" && l.detail === "24 mi"));
+  // an explicit zero still counts as "set" (removes the line entirely)
+  const zero = quoteFor(lead({ areaM2: 40, vanCost: 0 }), rates);
+  assert.ok(!zero.lines.some((l) => l.label === "Vans & fuel"));
+});
+
 test("the customer quote collapses to a single supply-&-install line", () => {
   const q = quoteFor(lead({ areaM2: 40 }), rates);
   assert.equal(q.custLines.length, 1);

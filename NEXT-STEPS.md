@@ -28,7 +28,8 @@ The live site rebuilds itself about a minute later.
   Settings; mark paid; prints in the house format (bank details, VAT no).
   Needs the `invoices` table — run the SQL block from the 2026-08-30 invoices change.
 - **Quote estimator** — second item in the menu. Enter m² (or width × length),
-  pick the grass, set crew £/day + days on site, set a margin % (or flip to
+  pick the grass, set crew £/day + days on site, choose flat or by-mileage van
+  cost (miles from Yate × 2 × vans × days × £/mile), set a margin % (or flip to
   "£/m² price" and it tells you the margin), untick anything not needed →
   instant ballpark price with cost/margin/profit, plus a "Materials to order"
   list with aggregate tonnages (Type 1 / stone dust / muck-away, from the depths

@@ -16,12 +16,20 @@ export const defaultCrewDayRate = (rates) => (num(rates.labour) * num(rates.m2Pe
 /** A throwaway lead the pricing engine can read (for the cost side only). */
 function estLead(est, rates) {
   const area = estArea(est);
+  const days = num(est.days) || estimateDays(area, rates);
   const survey = {
     areaM2: area,
     grassSpec: est.grass || rates.grasses[0]?.name,
-    crewDays: num(est.days) || estimateDays(area, rates),
+    crewDays: days,
     crewDayRate: num(est.crewDayRate) || defaultCrewDayRate(rates)
   };
+  if (est.vanMode === "mileage") {
+    const one = num(est.siteMiles);
+    const vans = num(est.vans) || 2;
+    const rate = num(est.mileageRate) || num(rates.mileageRate, 0.55);
+    survey.vanCost = one * 2 * vans * days * rate;
+    survey.vanNote = `${(one * 2).toFixed(0)} mi round trip · ${vans} van${vans > 1 ? "s" : ""} · ${days} day${days > 1 ? "s" : ""} @ £${rate.toFixed(2)}/mi`;
+  }
   for (const [key] of WORKS) if (est.off?.[key]) survey[key] = false;
   return { survey };
 }
@@ -147,6 +155,15 @@ export function renderEstimator(ctx) {
             ${numField("days", "Days on site", 'step="1" min="1"', autoDays)}
             ${numField("crewDayRate", "Crew £ per day", 'step="10"', String(defaultCrewDayRate(rates)))}
           </div>
+
+          <label class="lbl" style="margin-top:4px">Vans &amp; fuel</label>
+          <div class="segbtns" style="margin-bottom:10px">${seg("est-vanmode", "flat", est.vanMode || "flat", `Flat £${num(rates.vans).toFixed(2)}/m²`)}${seg("est-vanmode", "mileage", est.vanMode || "flat", "By mileage from Yate")}</div>
+          ${est.vanMode === "mileage" ? `<div class="grid3">
+            ${numField("siteMiles", "Miles from Yate (one way)", 'step="1"', "0")}
+            ${numField("vans", "Vans", 'step="1"', "2")}
+            ${numField("mileageRate", "£ per mile", 'step="0.01"', String(num(rates.mileageRate, 0.55)))}
+          </div>
+          <p style="font-size:11.5px;color:var(--muted);margin:-4px 2px 4px">Round trip (miles × 2) × vans × days on site × rate, spread across the m². HMRC rate is £0.55/mile.</p>` : ""}
 
           <label class="lbl" style="margin-top:4px">Margin</label>
           <div class="segbtns" style="margin-bottom:10px">${seg("est-pricemode", "margin", est.priceMode || "margin", "Set margin %")}${seg("est-pricemode", "price", est.priceMode || "margin", "Set £/m² price")}</div>

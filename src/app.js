@@ -26,6 +26,7 @@ let lastLocalEdit = 0;     // ms — used to ignore our own writes echoing back
 // Scratch state for the Quote estimator (never saved).
 function freshEst() {
   return { mode: "area", area: "", w: "", l: "", grass: "", days: "", crewDayRate: "",
+           vanMode: "flat", siteMiles: "", vans: "", mileageRate: "",
            priceMode: "margin", marginPct: "", pricePerM2: "", accessPct: "", off: {} };
 }
 
@@ -346,6 +347,7 @@ document.addEventListener("click", async (e) => {
     case "leads-clear": ui.leadStage = ui.leadSource = ui.leadChannel = ui.search = ""; render(); break;
     case "est-mode": ui.est.mode = el.dataset.mode; render(); break;
     case "est-pricemode": ui.est.priceMode = el.dataset.mode; render(); break;
+    case "est-vanmode": ui.est.vanMode = el.dataset.mode; render(); break;
     case "est-reset": ui.est = freshEst(); render(); break;
     case "new-invoice": {
       const inv = newInvoice(state);

@@ -210,7 +210,7 @@ insert into public.app_settings (id, business, rates) values (
     "invoiceTerms":"PAYMENT DUE ON RECEIPT OF INVOICE","invoiceFoot":"OR CASH + CHEQUE ACCEPTED","nextInvoiceNo":261}',
   '{"grasses":[{"name":"Standard 30mm","rate":12.0}],
     "wastePct":10,"type1":6.0,"stoneDust":2.25,"muckaway":4.25,"membrane":0.45,"sand":0.96,"joins":0.25,"edging":2.6,
-    "labour":10.5,"vans":0.66,"sundries":1.5,"marginPct":40,"vatPct":20,"m2PerCrewDay":40,
+    "labour":10.5,"vans":0.66,"mileageRate":0.55,"sundries":1.5,"marginPct":40,"vatPct":20,"m2PerCrewDay":40,
     "type1Depth":75,"stoneDustDepth":25,"muckawayDepth":150}'
 ) on conflict (id) do nothing;
 
