@@ -23,6 +23,8 @@ The live site rebuilds itself about a minute later.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.
+- **Quote estimator** — second item in the menu. Enter m² (or width × length),
+  pick the grass, untick anything not needed → instant ballpark price. Nothing saved.
 - **Analytics** — enquiry→won funnel, win rate, avg job value & days to close,
   revenue by month, lead-source performance
 - **Job sheets** — phone view for fitters

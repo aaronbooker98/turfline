@@ -3,10 +3,9 @@ import { esc, num, money, money2, fmtDate, dayDiff, todayISO } from "../util.js"
 import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, LOST_REASONS, dedupeMatches, paymentState, WORKS, workIsOn } from "../model.js";
 import { icon } from "../icons.js";
 
-/** The quote breakdown, also re-rendered on its own while typing. */
-export function quoteBreakdown(lead, state) {
-  const q = quoteFor(lead, state.rates, state.business.vat);
-  if (!(q.area > 0)) return `<div class="empty" style="padding:18px">Enter an area to build the quote.</div>`;
+/** The itemised cost → margin → VAT → total rows for a computed quote. Shared
+ *  by the record drawer and the standalone Quote estimator. */
+export function quoteRows(q, { footer = "" } = {}) {
   const row = (l) => `<div class="qline"><span>${esc(l.label)}${l.detail ? ` <span class="det">${esc(l.detail)}</span>` : ""}</span><span>${money2(l.amt)}</span></div>`;
   return [
     ...q.lines.filter((l) => l.grp === "cost").map(row),
@@ -15,8 +14,17 @@ export function quoteBreakdown(lead, state) {
     `<div class="qline sub"><span>Net${q.vatPct ? " (ex VAT)" : ""}</span><span>${money2(q.net)}</span></div>`,
     q.vatPct ? `<div class="qline muted"><span>VAT @ ${q.vatPct}%</span><span>${money2(q.vat)}</span></div>` : "",
     `<div class="qline tot"><span>Total</span><span>${money2(q.total)}</span></div>`,
-    `<div class="qline muted"><span>${q.billable.toFixed(1)} m² of grass to order · about ${q.days} crew day${q.days > 1 ? "s" : ""}</span><span>${money2(q.area ? q.total / q.area : 0)}/m²</span></div>`
+    footer
   ].join("");
+}
+
+/** The quote breakdown, also re-rendered on its own while typing. */
+export function quoteBreakdown(lead, state) {
+  const q = quoteFor(lead, state.rates, state.business.vat);
+  if (!(q.area > 0)) return `<div class="empty" style="padding:18px">Enter an area to build the quote.</div>`;
+  return quoteRows(q, {
+    footer: `<div class="qline muted"><span>${q.billable.toFixed(1)} m² of grass to order · about ${q.days} crew day${q.days > 1 ? "s" : ""}</span><span>${money2(q.area ? q.total / q.area : 0)}/m²</span></div>`
+  });
 }
 
 /** Deposit / balance block. Shown for jobs that are won or beyond. */

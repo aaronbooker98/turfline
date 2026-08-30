@@ -12,6 +12,7 @@ import { renderSchedule } from "./views/schedule.js";
 import { renderAnalytics } from "./views/analytics.js";
 import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
+import { renderEstimator, estimatorResults } from "./views/estimator.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
 import { buildQuoteDoc } from "./views/quote-doc.js";
 
@@ -33,6 +34,7 @@ const ui = {
   leadStage: "",
   leadSource: "",
   leadChannel: "",
+  est: { mode: "area", area: "", w: "", l: "", grass: "", accessPct: "", off: {} },
   deviceCrew: localStorage.getItem("turfline-crew") || null,
   readOnly: false,
   saveState: "idle",
@@ -52,10 +54,11 @@ const VIEWS = {
   pipeline: { title: "Pipeline", sub: "Every live enquiry by stage", render: renderPipeline },
   schedule: { title: "Schedule", sub: "Crews, jobs and clashes", render: renderSchedule },
   analytics: { title: "Analytics", sub: "Funnel, win rate and where the money comes from", render: renderAnalytics },
+  estimator: { title: "Quote estimator", sub: "A quick ballpark price — no record needed", render: renderEstimator },
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
-const OFFICE_NAV = ["today", "leads", "pipeline", "schedule", "analytics", "jobs", "settings"];
+const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "schedule", "analytics", "jobs", "settings"];
 const FITTER_NAV = ["jobs", "schedule"];
 const navFor = () => (ui.role === "fitters" ? FITTER_NAV : OFFICE_NAV);
 
@@ -195,7 +198,7 @@ function render() {
   const counts = {
     today: [c.action, c.overdue > 0], leads: [state.leads.length, false],
     pipeline: [c.pipeline, false], schedule: [c.installs, false],
-    analytics: [0, false], jobs: [0, false], settings: [0, false]
+    analytics: [0, false], estimator: [0, false], jobs: [0, false], settings: [0, false]
   };
   const nav = navFor().map((id) => [id, VIEWS[id].title, ...counts[id]]);
   const v = VIEWS[ui.view];
@@ -329,6 +332,8 @@ document.addEventListener("click", async (e) => {
       break;
     }
     case "leads-clear": ui.leadStage = ui.leadSource = ui.leadChannel = ui.search = ""; render(); break;
+    case "est-mode": ui.est.mode = el.dataset.mode; render(); break;
+    case "est-reset": ui.est = { mode: "area", area: "", w: "", l: "", grass: "", accessPct: "", off: {} }; render(); break;
     case "toggle-closed": ui.showClosed = !ui.showClosed; render(); break;
     case "done-action": {
       if (!lead) break;
@@ -412,6 +417,14 @@ document.addEventListener("input", (e) => {
     return render();
   }
   if (ui.readOnly) return;
+
+  if (t.dataset.est !== undefined || t.dataset.estWork !== undefined) {
+    if (t.dataset.estWork !== undefined) ui.est.off[t.dataset.estWork] = !t.checked;
+    else ui.est[t.dataset.est] = t.value;
+    const out = document.getElementById("est-out");
+    if (out) out.innerHTML = estimatorResults(ctx);
+    return;
+  }
 
   if (t.dataset.f) {
     const lead = leadById(ui.openId);
