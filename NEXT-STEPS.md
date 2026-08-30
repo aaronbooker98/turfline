@@ -26,7 +26,9 @@ The live site rebuilds itself about a minute later.
 - **Quote estimator** — second item in the menu. Enter m² (or width × length),
   pick the grass, set crew £/day + days on site, set a margin % (or flip to
   "£/m² price" and it tells you the margin), untick anything not needed →
-  instant ballpark price with cost/margin/profit. Nothing saved.
+  instant ballpark price with cost/margin/profit, plus a "Materials to order"
+  list with aggregate tonnages (Type 1 / stone dust / muck-away, from the depths
+  set in Settings → Pricing). Nothing saved.
 - **Analytics** — enquiry→won funnel, win rate, avg job value & days to close,
   revenue by month, lead-source performance
 - **Job sheets** — phone view for fitters

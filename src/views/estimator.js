@@ -3,7 +3,7 @@
 // editable per job, and you can work it the other way: type a £/m² price and it
 // tells you the margin. Driven by a scratch `ui.est`; nothing is saved.
 import { esc, num, money, money2 } from "../util.js";
-import { quoteFor, estimateDays, WORKS } from "../model.js";
+import { quoteFor, estimateDays, aggregatesFor, sandBagsFor, WORKS } from "../model.js";
 
 /** Area in m²: either typed straight in, or width × length. */
 export function estArea(est) {
@@ -39,6 +39,7 @@ function estimate(est, state) {
   const costLines = q.lines.filter((l) => l.grp === "cost");
   const cost = q.cost;
   const costPerM2 = area ? cost / area : 0;
+  const agg = aggregatesFor(area, rates);
 
   const accessPct = num(est.accessPct);
   const priceMode = est.priceMode === "price";
@@ -57,7 +58,7 @@ function estimate(est, state) {
   const net = base + access;
   const vat = net * vatPct / 100;
   return {
-    area, days, dayRate, cost, costPerM2, costLines, priceMode,
+    area, days, dayRate, cost, costPerM2, costLines, priceMode, agg, billable: q.billable,
     marginPct, marginAmt, accessPct, access, net, vat, total: net + vat, vatPct,
     pricePerM2: area ? net / area : 0
   };
@@ -97,7 +98,17 @@ export function estimatorResults(ctx) {
       ${row("Total", e.total, "tot")}
       <div class="qline muted"><span>${e.area.toFixed(1)} m²${est.mode === "wl" ? ` (${num(est.w)} × ${num(est.l)} m)` : ""} · crew ${money2(e.dayRate)}/day × ${e.days}</span><span></span></div>
     </div>
-    <p class="est-disclaim">Ballpark only — confirm on a site survey. Nothing here is saved.</p>`;
+
+    <div class="est-mats">
+      <div class="lbl">Materials to order</div>
+      <div class="mrow"><span>${esc(est.grass || state.rates.grasses[0]?.name || "Grass")}</span><span>${e.billable.toFixed(1)} m²</span></div>
+      ${!est.off?.type1 ? `<div class="mrow"><span>Type 1 sub-base <span class="sub">${num(state.rates.type1Depth, 75)}mm</span></span><span>${e.agg.type1.toFixed(1)} t</span></div>` : ""}
+      ${!est.off?.stoneDust ? `<div class="mrow"><span>Stone dust <span class="sub">${num(state.rates.stoneDustDepth, 25)}mm</span></span><span>${e.agg.stoneDust.toFixed(1)} t</span></div>` : ""}
+      ${!est.off?.muckaway ? `<div class="mrow"><span>Muck-away <span class="sub">~${e.agg.digDepthMm}mm dig</span></span><span>${e.agg.muckaway.toFixed(1)} t</span></div>` : ""}
+      ${!est.off?.sand ? `<div class="mrow"><span>Kiln-dried sand <span class="sub">1 bag / 4 m²</span></span><span>${sandBagsFor(e.area)} × 25kg</span></div>` : ""}
+      ${!est.off?.edging ? `<div class="mrow"><span>Edging</span><span>~${Math.ceil(4 * Math.sqrt(e.area))} m</span></div>` : ""}
+    </div>
+    <p class="est-disclaim">Ballpark only — tonnages are estimates from the set depths, confirm on a site survey. Nothing here is saved.</p>`;
 }
 
 export function renderEstimator(ctx) {

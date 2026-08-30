@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteFor, estimateDays, materialsFor, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
+import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
 const rates = structuredClone(DEFAULT_RATES);
@@ -68,10 +68,26 @@ test("job length comes from crew output, rounded up", () => {
   assert.equal(estimateDays(0, rates), 1); // never zero days
 });
 
+test("aggregate tonnage comes from area × depth × density", () => {
+  const a = aggregatesFor(40, rates); // 75mm type 1, 25mm dust
+  assert.equal(a.type1.toFixed(1), "6.0");      // 40 × 0.075 × 2.0
+  assert.equal(a.stoneDust.toFixed(2), "1.75"); // 40 × 0.025 × 1.75
+  assert.ok(a.muckaway > a.type1);              // spoil = build-up depth + turf strip
+  assert.equal(aggregatesFor(0, rates).type1, 0);
+  // deeper sub-base ⇒ more tonnes
+  assert.ok(aggregatesFor(40, { ...rates, type1Depth: 150 }).type1 > a.type1);
+});
+
+test("sand is one 25kg bag per 4 m², rounded up", () => {
+  assert.equal(sandBagsFor(40), 10);
+  assert.equal(sandBagsFor(41), 11);
+  assert.equal(sandBagsFor(0), 0);
+});
+
 test("materials list scales with the job and follows the works toggles", () => {
   const items = materialsFor(lead({ areaM2: 50 }), rates);
   const labels = items.map((i) => i.label);
-  assert.ok(labels.includes("Type 1 sub-base"));
+  assert.ok(labels.some((l) => l.startsWith("Type 1 sub-base")));
   assert.ok(labels.includes("Edging"));
   assert.ok(labels.includes("Muck-away"));
   assert.equal(items.find((i) => i.label === "Standard 30mm").qty, "55.0 m²");

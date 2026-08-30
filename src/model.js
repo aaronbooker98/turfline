@@ -76,8 +76,29 @@ export const DEFAULT_RATES = {
   sundries: 1.5,     // Sundries
   marginPct: 40,     // markup added to cost to reach the price (ex VAT)
   vatPct: 20,
-  m2PerCrewDay: 40   // drives the estimated job length
+  m2PerCrewDay: 40,  // drives the estimated job length
+  type1Depth: 75,    // mm — used to work out the aggregate tonnage
+  stoneDustDepth: 25 // mm
 };
+
+// Compacted supply density, tonnes per m³.
+const AGG_DENSITY = { type1: 2.0, stoneDust: 1.75, spoil: 1.6 };
+
+/** Rough aggregate tonnage for a job: Type 1 and stone dust going in, spoil
+ *  (turf strip + the build-up depth) coming out as muck-away. Estimates only. */
+export function aggregatesFor(area, rates) {
+  const a = Math.max(0, num(area, 0));
+  const t1 = num(rates.type1Depth, 75) / 1000;
+  const dust = num(rates.stoneDustDepth, 25) / 1000;
+  const strip = 0.04;                             // m — turf + topsoil taken off
+  const type1 = a * t1 * AGG_DENSITY.type1;
+  const stoneDust = a * dust * AGG_DENSITY.stoneDust;
+  const muckaway = a * (t1 + dust + strip) * AGG_DENSITY.spoil;
+  return { type1, stoneDust, muckaway, digDepthMm: Math.round((t1 + dust + strip) * 1000) };
+}
+
+/** Kiln-dried sand infill: one 25kg bag per 4 m². */
+export const sandBagsFor = (area) => Math.ceil(Math.max(0, num(area, 0)) / 4);
 
 // The switchable groundworks/materials lines, in the order they appear on a quote.
 // Each is keyed the same in `rates` (£/m²) and in `survey` (true/false, absent = on).
@@ -164,14 +185,15 @@ export function materialsFor(lead, rates, vatRegistered = true) {
   const q = quoteFor(lead, rates, vatRegistered);
   const s = lead.survey ?? {};
   const on = (k) => workIsOn(s, k);
+  const agg = aggregatesFor(q.area, rates);
   const items = [{ label: q.grass.name, qty: `${q.billable.toFixed(1)} m²` }];
-  if (on("type1")) items.push({ label: "Type 1 sub-base", qty: `${(q.area * 0.13).toFixed(1)} t approx` });
-  if (on("stoneDust")) items.push({ label: "Stone dust", qty: `${(q.area * 0.04).toFixed(1)} t approx` });
+  if (on("type1")) items.push({ label: `Type 1 sub-base (${num(rates.type1Depth, 75)}mm)`, qty: `${agg.type1.toFixed(1)} t approx` });
+  if (on("stoneDust")) items.push({ label: `Stone dust (${num(rates.stoneDustDepth, 25)}mm)`, qty: `${agg.stoneDust.toFixed(1)} t approx` });
   if (on("membrane")) items.push({ label: "Weed membrane", qty: `${q.area.toFixed(0)} m²` });
-  if (on("sand")) items.push({ label: "Kiln-dried sand", qty: `${Math.ceil(q.area * 5 / 25)} × 25kg bags` });
+  if (on("sand")) items.push({ label: "Kiln-dried sand", qty: `${sandBagsFor(q.area)} × 25kg bags` });
   if (on("joins")) items.push({ label: "Joining tape & glue", qty: "as needed" });
   if (on("edging")) items.push({ label: "Edging", qty: `${Math.ceil(4 * Math.sqrt(q.area || 0))} m approx` });
-  if (on("muckaway")) items.push({ label: "Muck-away", qty: `${(q.area * 0.16).toFixed(1)} t approx` });
+  if (on("muckaway")) items.push({ label: "Muck-away", qty: `${agg.muckaway.toFixed(1)} t approx` });
   return items;
 }
 

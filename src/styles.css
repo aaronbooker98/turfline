@@ -288,6 +288,11 @@ textarea.inp{resize:vertical;min-height:70px}
 .est-margin .sub{color:var(--muted);font-size:12px}
 .est-margin.loss{background:var(--warn-bg);color:var(--warn)}
 .qline.loss span:last-child{color:var(--warn)}
+.est-mats{margin-top:14px}
+.est-mats .mrow{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.est-mats .mrow:last-child{border-bottom:0}
+.est-mats .mrow span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.est-mats .sub{color:var(--muted);font-size:11px;font-family:inherit}
 @media (max-width:820px){ .est-grid{grid-template-columns:1fr} }
 
 /* ---------- leads table ---------- */
