@@ -61,10 +61,8 @@ Supabase project `jhkhchhszwmtlhnhmowr`. Live at crm.yateartificialgrass.com.
 - Login creds live in Supabase dashboard -> Authentication -> Users.
 
 Loose ends:
-- [ ] **Run the `invoices` table SQL** (Supabase → SQL Editor) — invoices won't
-      save until it exists. It's the `create table public.invoices …` + policy +
-      includes it.
 - [x] Ran the pricing reset SQL (per-m² model live).
+- [x] Ran the `invoices` table SQL (2026-08-30).
 - [ ] Change the fitters password from "YAG123" to something stronger
       (Supabase -> Auth -> Users -> the fitters row -> reset password).
 - [ ] Settings still has "Load example data" / "Delete every record" — office only
