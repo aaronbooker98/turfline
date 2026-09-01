@@ -2,6 +2,9 @@
 import { esc } from "../util.js";
 import { icon } from "../icons.js";
 
+const calendarFeedUrl = (b) =>
+  `https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/calendar?token=${encodeURIComponent(b.calendarToken || "")}`;
+
 const rateRow = (rates, key, label, help, step = "0.01") => `
   <div class="settrow">
     <div class="d">${esc(label)}<small>${esc(help)}</small></div>
@@ -78,6 +81,15 @@ export function renderSettings(ctx) {
           <div class="field"><label class="lbl">Next invoice number</label><input class="inp num" type="number" step="1" data-biz="nextInvoiceNo" value="${esc(b.nextInvoiceNo ?? 261)}"></div>
         </div>
         <div class="field"><label class="lbl">Payment note</label><input class="inp" data-biz="invoiceFoot" value="${esc(b.invoiceFoot ?? "")}" placeholder="OR CASH + CHEQUE ACCEPTED"></div>
+        <div class="field"><label class="lbl">Google review link</label>
+          <input class="inp" data-biz="reviewUrl" value="${esc(b.reviewUrl ?? "")}" placeholder="https://g.page/r/…/review">
+          <small style="color:var(--muted);font-size:11.5px">Added to the message when you email or text an invoice.</small></div>
+      </div></section>
+      <section class="card"><div class="card-h"><h3>Calendar sync</h3></div><div class="card-b">
+        <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Subscribe to this in Google or Apple Calendar to see every booked survey and install alongside your normal diary. It refreshes itself.</p>
+        <div class="field"><label class="lbl">Feed URL</label>
+          <input class="inp" readonly onclick="this.select()" value="${esc(calendarFeedUrl(b))}"></div>
+        <p style="margin:0;font-size:11.5px;color:var(--muted)">Google Calendar → Other calendars → <b>From URL</b>. Apple Calendar → File → <b>New Calendar Subscription</b>. Keep this link private. Needs the <code>calendar</code> Edge Function deployed (see <b>supabase/DEPLOY-CALENDAR.md</b>).</p>
       </div></section>
       <section class="card"><div class="card-h"><h3>Crews</h3><span class="n">${state.crews.length}</span></div><div class="card-b">
         ${state.crews.map((c, i) => `<div class="crewrow">

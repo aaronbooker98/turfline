@@ -25,6 +25,14 @@ The live site rebuilds itself about a minute later.
   Set the date in a record's Survey section — stage auto-moves to "Survey booked".
 - **To-do list** — card on the Today screen. Add a task (Enter), tick it off,
   clear done. Stored in `business.todos`, synced between office devices.
+- **Text the customer** — "Text" buttons on quotes & invoices (opens Messages).
+- **Quote acceptance** — "Copy accept link" / the emailed & texted quote links to
+  a public `accept.html?t=<token>`; customer taps Accept → record goes to Won.
+  Needs the `quote_view` / `quote_accept` RPCs (in setup.sql).
+- **Google review link** (Settings) — appended to the invoice email/text.
+- **Calendar feed** — `supabase/functions/calendar` Edge Function outputs an .ics
+  of surveys + installs. Subscribe URL in Settings → Calendar sync. See
+  supabase/DEPLOY-CALENDAR.md.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.

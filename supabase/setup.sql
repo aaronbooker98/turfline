@@ -190,6 +190,55 @@ end; $$;
 grant execute on function public.mark_job_complete(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Public quote acceptance: a customer opens accept.html?t=<token>, which reads
+-- the quote with quote_view() and, on "Accept", calls quote_accept(). Both match
+-- one lead by a long random token stored on the lead (data.accept.token); no
+-- login, no other data exposed.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.quote_view(p_token text)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'name',     l.data->>'name',
+    'address',  l.data->>'address',
+    'postcode', l.data->>'postcode',
+    'area',     l.data->'survey'->>'areaM2',
+    'grass',    l.data->'survey'->>'grassSpec',
+    'total',    l.data->'accept'->>'total',
+    'acceptedAt', l.data->'accept'->>'acceptedAt',
+    'business', (select business->>'name' from public.app_settings where id = 1)
+  )
+  from public.leads l
+  where p_token <> '' and l.data->'accept'->>'token' = p_token
+  limit 1;
+$$;
+grant execute on function public.quote_view(text) to anon, authenticated;
+
+create or replace function public.quote_accept(p_token text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  lid   uuid;
+  d     jsonb;
+  today text := to_char((now() at time zone 'utc')::date, 'YYYY-MM-DD');
+  stamp text := to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"');
+begin
+  if coalesce(p_token, '') = '' then return jsonb_build_object('ok', false); end if;
+  select id, data into lid, d from public.leads where data->'accept'->>'token' = p_token limit 1;
+  if lid is null then return jsonb_build_object('ok', false); end if;
+  if d->'accept'->>'acceptedAt' is not null then return jsonb_build_object('ok', true, 'already', true); end if;
+
+  d := jsonb_set(d, '{accept,acceptedAt}', to_jsonb(stamp));
+  d := jsonb_set(d, '{stage}',      '"won"');
+  d := jsonb_set(d, '{stageAt}',    to_jsonb(today));
+  d := jsonb_set(d, '{nextAction}', 'null'::jsonb);
+  d := jsonb_set(d, '{activity}',
+        coalesce(d->'activity', '[]'::jsonb) || jsonb_build_object('ts', stamp, 'text', 'Quote accepted online by the customer'));
+  update public.leads set data = d where id = lid;
+  return jsonb_build_object('ok', true);
+end; $$;
+grant execute on function public.quote_accept(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Live updates (office devices stay in sync)
 -- ---------------------------------------------------------------------------
 do $$

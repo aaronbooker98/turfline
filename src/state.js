@@ -18,6 +18,8 @@ export function defaultState() {
       invoiceTerms: "PAYMENT DUE ON RECEIPT OF INVOICE",
       invoiceFoot: "OR CASH + CHEQUE ACCEPTED",
       nextInvoiceNo: 261,
+      reviewUrl: "",
+      calendarToken: "cal_yag_7c1f9e4a2d8b6035",
       todos: []
     },
     rates: structuredClone(DEFAULT_RATES),
@@ -47,8 +49,9 @@ export function normalise(state) {
     l.lostReason ??= "";
   }
   for (const inv of s.invoices) {
-    inv.billTo ??= { name: "", address: "", email: "" };
+    inv.billTo ??= { name: "", address: "", email: "", phone: "" };
     inv.billTo.email ??= "";
+    inv.billTo.phone ??= "";
     inv.description ??= "Artificial Grass Supply + fit";
     if (inv.amountIncVat == null) inv.amountIncVat = true;
     if (inv.vat == null) inv.vat = true;
@@ -66,7 +69,7 @@ export function newInvoice(state, lead = null) {
     id: newId(),
     number,
     date: todayISO(),
-    billTo: { name: "", address: "", email: "" },
+    billTo: { name: "", address: "", email: "", phone: "" },
     leadId: lead?.id ?? null,
     description: "Artificial Grass Supply + fit",
     amount: "",
@@ -79,6 +82,7 @@ export function newInvoice(state, lead = null) {
     inv.billTo.name = lead.name || "";
     inv.billTo.address = [lead.address, lead.postcode].filter(Boolean).join("\n");
     inv.billTo.email = lead.email || "";
+    inv.billTo.phone = lead.phone || "";
   }
   return inv;
 }

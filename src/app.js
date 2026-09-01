@@ -40,6 +40,28 @@ function openMail(to, subject, body) {
   window.location.href = `mailto:${encodeURIComponent(to || "")}?${q}`;
 }
 
+/** Open the phone's Messages app with the number and text pre-filled. */
+function openSms(number, body) {
+  const n = String(number || "").replace(/[^\d+]/g, "");
+  window.location.href = `sms:${n}?body=${encodeURIComponent(body)}`;
+}
+
+/** The public "view & accept your quote" link. Stamps a token + frozen total
+ *  on the lead the first time it's needed, so accepting reflects today's quote. */
+function quoteAcceptLink(lead) {
+  lead.accept ??= {};
+  if (!lead.accept.token) lead.accept.token = "q_" + crypto.randomUUID().replace(/-/g, "");
+  const q = quoteFor(lead, state.rates, state.business.vat);
+  lead.accept.total = Math.round(q.total * 100) / 100;
+  lead.accept.sentAt = todayISO();
+  return `${location.origin}${location.pathname.replace(/[^/]*$/, "")}accept.html?t=${lead.accept.token}`;
+}
+
+const reviewLine = () => {
+  const u = (state.business.reviewUrl || "").trim();
+  return u ? `\n\nHappy with the work? A quick Google review would mean a lot:\n${u}` : "";
+};
+
 // Scratch state for the Quote estimator (never saved).
 function freshEst() {
   return { mode: "area", area: "", w: "", l: "", grass: "", days: "", crewDayRate: "",
@@ -456,28 +478,50 @@ document.addEventListener("click", async (e) => {
       save(); render();
       break;
     }
-    case "email-quote": {
+    case "copy-accept": {
+      const l = leadById(el.dataset.id);
+      if (!l) break;
+      const link = quoteAcceptLink(l);
+      save();
+      navigator.clipboard?.writeText(link).then(
+        () => alert("Accept link copied — paste it into a text or email."),
+        () => prompt("Copy this link:", link)
+      );
+      break;
+    }
+    case "email-quote": case "text-quote": {
       const l = leadById(el.dataset.id);
       if (!l) break;
       const q = quoteFor(l, state.rates, state.business.vat);
       const b = state.business;
+      const link = quoteAcceptLink(l);
+      save();
+      if (act === "text-quote") {
+        openSms(l.phone, `Hi ${l.name || "there"}, your quote from ${b.name} for ${q.area} m² artificial grass: ${money2(q.total)}${b.vat ? " inc VAT" : ""}. View & accept it here: ${link}`);
+        break;
+      }
       const body = [
         `Hi ${l.name || "there"},`, "",
         `Thanks for the enquiry. Here's your quote for artificial grass${l.address ? " at " + l.address : ""}:`, "",
         `Area: ${q.area} m²`, `Grass: ${q.grass.name}`,
         `Total${b.vat ? " (inc VAT)" : ""}: ${money2(q.total)}`,
         l.quote?.ref ? `Quote ref: ${l.quote.ref}` : "",
-        "", "The full quote is attached.", "",
+        "", `View and accept your quote online: ${link}`,
+        "The full quote is also attached.", "",
         `Any questions, just reply or call ${b.phone || ""}.`, "", b.name
       ].filter((x) => x !== "").join("\n");
       openMail(l.email, `Your quote from ${b.name}`, body);
       break;
     }
-    case "email-invoice": {
+    case "email-invoice": case "text-invoice": {
       const inv = state.invoices.find((i) => i.id === el.dataset.id);
       if (!inv) break;
       const b = state.business;
       const t = invoiceTotals(inv, b.vat ? state.rates.vatPct : 0);
+      if (act === "text-invoice") {
+        openSms(inv.billTo?.phone, `Hi ${inv.billTo?.name || "there"}, invoice ${inv.number} from ${b.legalName || b.name} — ${money2(t.total)} due. Pay to ${b.bankName || ""} sort ${b.sortCode || ""} acc ${b.accountNo || ""}, ref invoice ${inv.number}.${reviewLine()}`);
+        break;
+      }
       const body = [
         `Hi ${inv.billTo?.name || "there"},`, "",
         `Please find invoice ${inv.number} attached.`, "",
@@ -487,7 +531,7 @@ document.addEventListener("click", async (e) => {
         b.sortCode ? `Sort code: ${b.sortCode}` : "",
         b.accountNo ? `Account no: ${b.accountNo}` : "",
         "", "Thank you,", b.name
-      ].filter((x) => x !== "").join("\n");
+      ].filter((x) => x !== "").join("\n") + reviewLine();
       openMail(inv.billTo?.email, `Invoice ${inv.number} — ${b.legalName || b.name}`, body);
       break;
     }
@@ -600,7 +644,12 @@ document.addEventListener("input", (e) => {
     if (inv) {
       inv.leadId = lead?.id ?? null;
       if (lead) {
-        inv.billTo = { name: lead.name || "", address: [lead.address, lead.postcode].filter(Boolean).join("\n") };
+        inv.billTo = {
+          name: lead.name || "",
+          address: [lead.address, lead.postcode].filter(Boolean).join("\n"),
+          email: lead.email || "",
+          phone: lead.phone || ""
+        };
       }
       save(); render();
     }

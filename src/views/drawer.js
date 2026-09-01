@@ -141,9 +141,12 @@ export function renderDrawer(ctx, lead) {
 
     <div class="sect"><h4>Quote</h4>
       <div class="quote-out">${quoteBreakdown(lead, state)}</div>
+      ${lead.accept?.acceptedAt ? `<div class="banner good" style="margin-top:10px">${icon("check")}<div>Accepted online by the customer on ${fmtDate(lead.accept.acceptedAt.slice(0, 10))}.</div></div>` : ""}
       ${ro || !(q.total > 0) ? "" : `<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn sm" data-act="print-quote" data-id="${lead.id}">${icon("jobs")}Print / save quote</button>
-        <button class="btn sm ghost" data-act="email-quote" data-id="${lead.id}">Email to customer</button>
+        <button class="btn sm ghost" data-act="email-quote" data-id="${lead.id}">Email</button>
+        <button class="btn sm ghost" data-act="text-quote" data-id="${lead.id}">Text</button>
+        <button class="btn sm ghost" data-act="copy-accept" data-id="${lead.id}">Copy accept link</button>
         ${lead.quote?.ref ? `<span style="font-size:12px;color:var(--muted)">Ref ${esc(lead.quote.ref)}</span>` : ""}</div>`}
     </div>
 

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your quote — Yate Artificial Grass</title>
+  <link rel="icon" href="src/assets/yate-logo.png">
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{font:16px/1.6 -apple-system,"Helvetica Neue",Arial,sans-serif;color:#1b1b1b;background:#f4f5f2;padding:24px 16px}
+    .sheet{max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+    .band{padding:24px 26px 16px;border-bottom:2px solid #161616}
+    .band img{height:64px;width:auto;display:block}
+    .body{padding:24px 26px 30px}
+    h1{font-size:20px;margin:0 0 4px}
+    .muted{color:#666;font-size:14px}
+    .rows{margin:20px 0;border-top:1px solid #eee}
+    .row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid #eee;font-size:15px}
+    .row .v{font-weight:600;text-align:right}
+    .total{font-size:22px;font-weight:700;padding-top:14px}
+    button{width:100%;font:600 16px/1 inherit;padding:15px;border:0;border-radius:9px;background:#3C8129;color:#fff;cursor:pointer;margin-top:8px}
+    button:disabled{opacity:.5;cursor:default}
+    .note{font-size:12.5px;color:#888;margin-top:14px;text-align:center}
+    .msg{padding:16px;border-radius:9px;font-size:15px;margin-top:8px}
+    .msg.ok{background:#E3F0E7;color:#2C7A4B}
+    .msg.err{background:#F6E5E5;color:#a33}
+    .center{text-align:center;padding:40px 20px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="band"><img src="src/assets/yate-logo.png" alt="Yate Artificial Grass"></div>
+    <div class="body" id="body"><div class="center">Loading your quote…</div></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/+esm";
+    const db = createClient(
+      "https://jhkhchhszwmtlhnhmowr.supabase.co",
+      "sb_publishable_c8Cc7MXwv4JsYPYwfSsulw_4rYO23pZ",
+      { auth: { persistSession: false } }
+    );
+    const token = new URLSearchParams(location.search).get("t") || "";
+    const body = document.getElementById("body");
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const money = (n) => "£" + Number(n || 0).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function fail(t) { body.innerHTML = `<div class="center">${esc(t)}</div>`; }
+
+    async function load() {
+      if (!token) return fail("This link is missing its code. Please use the link exactly as it was sent to you.");
+      const { data, error } = await db.rpc("quote_view", { p_token: token });
+      if (error || !data) return fail("We couldn't find this quote. It may have expired — please get in touch and we'll resend it.");
+      render(data);
+    }
+
+    function render(q, justAccepted) {
+      const accepted = justAccepted || q.acceptedAt;
+      const rows = [
+        ["Prepared for", q.name],
+        ["Address", [q.address, q.postcode].filter(Boolean).join(", ")],
+        ["Area", q.area ? q.area + " m²" : ""],
+        ["Grass", q.grass]
+      ].filter(([, v]) => v);
+      body.innerHTML = `
+        <h1>Your quote from ${esc(q.business || "Yate Artificial Grass")}</h1>
+        <div class="muted">Supply &amp; installation of artificial grass</div>
+        <div class="rows">
+          ${rows.map(([k, v]) => `<div class="row"><span>${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join("")}
+          <div class="row total"><span>Total${q.total ? " (inc VAT)" : ""}</span><span class="v">${q.total ? money(q.total) : "—"}</span></div>
+        </div>
+        ${accepted
+          ? `<div class="msg ok">Thank you — your quote is accepted. We'll be in touch to book you in.</div>`
+          : `<button id="accept">Accept this quote</button>
+             <div class="note">By accepting you're confirming you'd like to go ahead at the price above. Final details are confirmed on a site survey.</div>`}`;
+      const btn = document.getElementById("accept");
+      if (btn) btn.onclick = accept;
+    }
+
+    async function accept() {
+      const btn = document.getElementById("accept");
+      btn.disabled = true; btn.textContent = "Sending…";
+      const { data, error } = await db.rpc("quote_accept", { p_token: token });
+      if (error || !data?.ok) {
+        btn.disabled = false; btn.textContent = "Accept this quote";
+        body.insertAdjacentHTML("beforeend", `<div class="msg err">Something went wrong — please try again, or reply to the message you were sent.</div>`);
+        return;
+      }
+      const { data: q } = await db.rpc("quote_view", { p_token: token });
+      render(q || {}, true);
+    }
+
+    load();
+  </script>
+</body>
+</html>

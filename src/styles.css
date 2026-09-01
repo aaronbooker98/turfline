@@ -271,6 +271,7 @@ textarea.inp{resize:vertical;min-height:70px}
 .banner{display:flex;gap:9px;align-items:flex-start;padding:10px 13px;border-radius:var(--r-sm);font-size:12.5px;margin-bottom:16px}
 .banner.warn{background:var(--warn-bg);color:var(--warn)}
 .banner.info{background:var(--info-bg);color:var(--info)}
+.banner.good{background:var(--good-bg);color:var(--good)}
 .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .search{position:relative;flex:1;min-width:180px;max-width:320px}
 .search .inp{padding-left:31px}
