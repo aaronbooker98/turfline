@@ -18,7 +18,10 @@ The live site rebuilds itself about a minute later.
 
 - **Today** — chase list, cold-quote flag, installs this week
 - **Leads** — sortable/filterable table of every enquiry
-- **Pipeline** — board by stage; drag a card between columns to move it along
+- **Pipeline** — board by stage; drag a card between columns to move it along.
+  Moves itself forward (never back): survey date set → Survey booked; area entered
+  → Surveyed; quote sent (print/email/text/link) → Quoted; accepted online or
+  start date set → Won; install marked complete → Installed. Lost stays manual.
 - **Schedule** — Week grid (default) or Month calendar, toggle at the top, clash detection
 - **Surveys** — survey diary. Booked appointments (leads with a `survey.bookedFor`
   date, stage enquiry/survey), grouped by day, overdue ones flagged "write up".

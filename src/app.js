@@ -62,6 +62,11 @@ const reviewLine = () => {
   return u ? `\n\nHappy with the work? A quick Google review would mean a lot:\n${u}` : "";
 };
 
+/** Move a lead to Quoted when a quote goes out, unless it's already further on. */
+function markQuoted(l) {
+  if (["enquiry", "survey", "surveyed"].includes(l.stage)) setStage(l, "quoted");
+}
+
 // Scratch state for the Quote estimator (never saved).
 function freshEst() {
   return { mode: "area", area: "", w: "", l: "", grass: "", days: "", crewDayRate: "",
@@ -482,7 +487,8 @@ document.addEventListener("click", async (e) => {
       const l = leadById(el.dataset.id);
       if (!l) break;
       const link = quoteAcceptLink(l);
-      save();
+      markQuoted(l);
+      save(); render();
       navigator.clipboard?.writeText(link).then(
         () => alert("Accept link copied — paste it into a text or email."),
         () => prompt("Copy this link:", link)
@@ -495,7 +501,8 @@ document.addEventListener("click", async (e) => {
       const q = quoteFor(l, state.rates, state.business.vat);
       const b = state.business;
       const link = quoteAcceptLink(l);
-      save();
+      markQuoted(l);
+      save(); render();
       if (act === "text-quote") {
         openSms(l.phone, `Hi ${l.name || "there"}, your quote from ${b.name} for ${q.area} m² artificial grass: ${money2(q.total)}${b.vat ? " inc VAT" : ""}. View & accept it here: ${link}`);
         break;
@@ -594,6 +601,7 @@ document.addEventListener("click", async (e) => {
       }
       l.quote.docDate = todayISO();
       logActivity(l, `Quote ${l.quote.ref} produced`);
+      markQuoted(l);
       save();
       const w = window.open("", "_blank");
       if (w) {
@@ -682,7 +690,14 @@ document.addEventListener("input", (e) => {
     if (t.dataset.f === "nextAction" && !value) value = null;
     setPath(lead, t.dataset.f, value);
     if (t.dataset.f === "job.startDate" && value && !lead.job.days) lead.job.days = estimateDays(lead.survey?.areaM2, state.rates);
-    if (t.dataset.f === "survey.bookedFor" && value && lead.stage === "enquiry") { setStage(lead, "survey"); save(); render(); return; }
+
+    // Keep the pipeline moving on its own — forward only, never past where it is.
+    // (Area is handled on 'change' below so it doesn't fire mid-keystroke.)
+    const before = lead.stage;
+    if (t.dataset.f === "survey.bookedFor" && value && lead.stage === "enquiry") setStage(lead, "survey");
+    if (t.dataset.f === "job.startDate" && value && lead.stage === "quoted") setStage(lead, "won");
+    if (lead.stage !== before) { save(); render(); return; }
+
     save();
     if (t.dataset.f === "lostReason" || (t.dataset.f.startsWith("payment.") && t.type === "checkbox")) { render(); return; }
     refreshDrawerTotals(lead);
@@ -693,6 +708,16 @@ document.addEventListener("input", (e) => {
   if (t.dataset.grassRate !== undefined) { state.rates.grasses[Number(t.dataset.grassRate)].rate = parseFloat(t.value) || 0; return save(); }
   if (t.dataset.crew !== undefined) { state.crews[Number(t.dataset.crew)].name = t.value; return save(); }
   if (t.dataset.biz) { state.business[t.dataset.biz] = t.type === "checkbox" ? t.checked : t.value; return save(); }
+});
+
+// A surveyed area committed (blur / Enter) advances an un-surveyed lead.
+document.addEventListener("change", (e) => {
+  if (!ui.session || !state || ui.readOnly) return;
+  if (e.target.dataset.f !== "survey.areaM2") return;
+  const lead = leadById(ui.openId);
+  if (lead && num(e.target.value) > 0 && ["enquiry", "survey"].includes(lead.stage)) {
+    setStage(lead, "surveyed"); save(); render();
+  }
 });
 
 document.addEventListener("keydown", (e) => {
