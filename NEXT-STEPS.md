@@ -36,6 +36,10 @@ The live site rebuilds itself about a minute later.
 - **Calendar feed** — `supabase/functions/calendar` Edge Function outputs an .ics
   of surveys + installs. Subscribe URL in Settings → Calendar sync. See
   supabase/DEPLOY-CALENDAR.md.
+- **Claude connector** — `supabase/functions/mcp` is a remote MCP server (stateless
+  Streamable HTTP). Add its URL (Settings → Claude connector) in the Claude app to
+  book surveys / look up leads / manage to-dos by chat. 14 tools. Secret `MCP_KEY`.
+  Deploy: supabase/DEPLOY-MCP.md.
 - **Pricing** — per-m² cost stack (grass + groundworks + labour/vans/sundries),
   each groundworks line switchable per job, then a Margin % → price, then VAT.
   Edit every rate in Settings → Pricing. Customer quote shows one supply-&-install line.

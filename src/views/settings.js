@@ -4,6 +4,8 @@ import { icon } from "../icons.js";
 
 const calendarFeedUrl = (b) =>
   `https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/calendar?token=${encodeURIComponent(b.calendarToken || "")}`;
+const mcpUrl = (b) =>
+  `https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=${encodeURIComponent(b.mcpKey || "")}`;
 
 const rateRow = (rates, key, label, help, step = "0.01") => `
   <div class="settrow">
@@ -90,6 +92,12 @@ export function renderSettings(ctx) {
         <div class="field"><label class="lbl">Feed URL</label>
           <input class="inp" readonly onclick="this.select()" value="${esc(calendarFeedUrl(b))}"></div>
         <p style="margin:0;font-size:11.5px;color:var(--muted)">Google Calendar → Other calendars → <b>From URL</b>. Apple Calendar → File → <b>New Calendar Subscription</b>. Keep this link private. Needs the <code>calendar</code> Edge Function deployed (see <b>supabase/DEPLOY-CALENDAR.md</b>).</p>
+      </div></section>
+      <section class="card"><div class="card-h"><h3>Claude connector</h3></div><div class="card-b">
+        <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Add this in the Claude app (Customize → Connectors → <b>Add custom connector</b>) to let Claude look things up, book surveys, and manage the to-do list by chat.</p>
+        <div class="field"><label class="lbl">Connector URL</label>
+          <input class="inp" readonly onclick="this.select()" value="${esc(mcpUrl(b))}"></div>
+        <p style="margin:0;font-size:11.5px;color:var(--muted)">Keep this link private — it can change your CRM. Needs the <code>mcp</code> Edge Function deployed (see <b>supabase/DEPLOY-MCP.md</b>).</p>
       </div></section>
       <section class="card"><div class="card-h"><h3>Crews</h3><span class="n">${state.crews.length}</span></div><div class="card-b">
         ${state.crews.map((c, i) => `<div class="crewrow">
