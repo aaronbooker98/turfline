@@ -1,6 +1,6 @@
 // The record editor: one enquiry from first call to aftercare.
 import { esc, num, money, money2, fmtDate, dayDiff, todayISO } from "../util.js";
-import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, LOST_REASONS, dedupeMatches, paymentState, WORKS, workIsOn } from "../model.js";
+import { quoteFor, actionState, isCold, stage, leadName, STAGES, CHANNELS, LOST_REASONS, dedupeMatches, paymentState, WORKS, workIsOn } from "../model.js";
 import { icon } from "../icons.js";
 
 /** The itemised cost → margin → VAT → total rows for a computed quote. Shared
@@ -176,7 +176,7 @@ export function renderDrawer(ctx, lead) {
     <aside class="drawer" role="dialog" aria-label="Enquiry record">
       <div class="drawer-h">
         <div style="flex:1;min-width:0">
-          <h2>${esc(lead.name || "New enquiry")}</h2>
+          <h2>${esc(lead.name?.trim() || lead.phone ? leadName(lead) : "New enquiry")}</h2>
           <div class="s">${esc(stage(lead.stage).label)} · ${esc(lead.postcode || lead.address || "no address")} · ${money(q.total)}</div>
         </div>
         <button class="btn ghost sm" data-act="close" aria-label="Close">${icon("x")}</button>

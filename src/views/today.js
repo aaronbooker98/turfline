@@ -1,6 +1,6 @@
 // The home screen: what needs doing now, and what is landing this week.
 import { esc, money, num, todayISO, dayDiff, fmtDate, fmtDateLong } from "../util.js";
-import { quoteFor, actionState, isCold, stage, invoiceTotals } from "../model.js";
+import { quoteFor, actionState, isCold, stage, leadName, invoiceTotals } from "../model.js";
 import { icon } from "../icons.js";
 
 function todoCard(state) {
@@ -47,7 +47,7 @@ function chaseRow(lead, total) {
   return `<div class="qrow" data-open="${lead.id}">
     <span class="qmark ${tone}"></span>
     <div class="qmain">
-      <div class="qname">${esc(lead.name || "Unnamed enquiry")}</div>
+      <div class="qname">${esc(leadName(lead))}</div>
       <div class="qmeta">${esc(lead.nextNote || stage(lead.stage).label)}</div>
     </div>
     <div class="qright"><span class="qval">${money(total)}</span>
@@ -97,7 +97,7 @@ export function renderToday(ctx) {
     const when = d === 0 ? "Today" : d === 1 ? "Tomorrow" : d < 0 ? `${fmtDate(l.job.startDate)} (running)` : fmtDateLong(l.job.startDate);
     return `<div class="qrow" data-open="${l.id}">
       <span class="qmark ${d === 0 ? "good" : ""}"></span>
-      <div class="qmain"><div class="qname">${esc(l.name || "Unnamed")}</div>
+      <div class="qmain"><div class="qname">${esc(leadName(l))}</div>
         <div class="qmeta">${esc(when)} · ${esc(cr?.name ?? "Unassigned")} · ${l.job.days || 1} day${(l.job.days || 1) > 1 ? "s" : ""} · ${esc(l.postcode || l.address || "")}</div></div>
       <div class="qright"><span class="qval">${num(l.survey?.areaM2, 0)} m²</span></div></div>`;
   };

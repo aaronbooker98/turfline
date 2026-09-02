@@ -75,11 +75,25 @@ Deno.serve(async (req) => {
     if (m) message = String(m.value ?? m.content ?? "");
   }
 
+  const phone = pick("phone_number", "caller_number", "contact_phone", "contact_number");
+  const city = pick("contact_city", "caller_city");
+  const region = pick("contact_state", "caller_state");
+  const country = pick("contact_country", "caller_country");
+  // Call tracking drops the caller's location (often just "United Kingdom") into
+  // the name field when it can't identify them — don't let that become the name.
+  const rawName = pick("contact_name", "caller_name", "name").trim();
+  const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller)$/i;
+  const nameIsJunk = !rawName
+    || NOT_A_NAME.test(rawName)
+    || [city, region, country].some((g) => g && g.toLowerCase() === rawName.toLowerCase())
+    || (city && region && rawName.toLowerCase() === `${city}, ${region}`.toLowerCase());
+  const name = nameIsJunk ? (phone ? `Caller ${phone}` : "Phone enquiry") : rawName;
+
   const lead = {
-    name: pick("contact_name", "caller_name", "name"),
-    phone: pick("phone_number", "caller_number", "contact_phone", "contact_number"),
+    name,
+    phone,
     email: pick("email_address", "contact_email_address", "contact_email", "email"),
-    address: [pick("contact_city"), pick("contact_state")].filter(Boolean).join(", "),
+    address: [city, region].filter(Boolean).join(", "),
     postcode: pick("contact_zip", "contact_postcode", "postal_code", "postcode"),
     source,
     campaign,
@@ -91,7 +105,7 @@ Deno.serve(async (req) => {
     nextNote: channel === "phone"
       ? `Call back${keyword ? ` — searched "${keyword}"` : landing ? ` — from ${landing}` : ""}`
       : "Website enquiry — reply",
-    survey: { areaM2: "", grassSpec: "", edgingM: "", wastePct: 10, skip: false, accessPct: 0, notes: message || "" },
+    survey: { areaM2: "", grassSpec: "", accessPct: 0, notes: message || "" },
     quote: {}, job: {},
     activity: [{ ts: now, text: `Captured from WhatConverts (${type || "lead"})` }],
     _ext: extId,

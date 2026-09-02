@@ -2,7 +2,7 @@
 // grouped by day. Bookings live on the lead (survey.bookedFor); set one in the
 // record's Survey section.
 import { esc, todayISO, addDays, fmtDateLong } from "../util.js";
-import { bookedSurveys, stage } from "../model.js";
+import { bookedSurveys, stage, leadName } from "../model.js";
 import { icon } from "../icons.js";
 
 const timeOf = (when) => {
@@ -24,7 +24,7 @@ function surveyRow(entry) {
   return `<div class="qrow" data-open="${l.id}">
     <span class="qmark ${entry.overdue ? "crit" : ""}"></span>
     <div class="qmain">
-      <div class="qname">${t ? `<span class="svtime">${esc(t)}</span> ` : ""}${esc(l.name || "Unnamed enquiry")}</div>
+      <div class="qname">${t ? `<span class="svtime">${esc(t)}</span> ` : ""}${esc(leadName(l))}</div>
       <div class="qmeta">${bits || esc(stage(l.stage).label)}${l.survey?.bookedNote ? ` — ${esc(l.survey.bookedNote)}` : ""}</div>
     </div>
     <div class="qright">${entry.overdue ? `<span class="pill crit"><span class="pdot"></span>write up</span>` : ""}</div>

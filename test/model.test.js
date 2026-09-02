@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, invoiceTotals, bookedSurveys, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
+import { quoteFor, estimateDays, materialsFor, aggregatesFor, sandBagsFor, invoiceTotals, bookedSurveys, leadName, actionState, isCold, setStage, jobsOn, dedupeMatches, paymentState, DEFAULT_RATES } from "../src/model.js";
 import { addDays, todayISO } from "../src/util.js";
 
 const rates = structuredClone(DEFAULT_RATES);
@@ -187,6 +187,14 @@ test("paymentState tracks deposit, balance and what's outstanding", () => {
   assert.equal(done.outstanding, 0);
   assert.equal(done.settled, true);
   assert.equal(paymentState({ payment: { deposit: 9999 } }, total).balance, 0); // deposit capped at total
+});
+
+test("leadName falls back to the phone when the name is missing or a placeholder", () => {
+  assert.equal(leadName({ name: "Jo Bloggs", phone: "07700 900123" }), "Jo Bloggs");
+  assert.equal(leadName({ name: "United Kingdom", phone: "07700 900123" }), "07700 900123");
+  assert.equal(leadName({ name: "Unknown Caller", phone: "0117 111 2222" }), "0117 111 2222");
+  assert.equal(leadName({ name: "", phone: "07700 900123" }), "07700 900123");
+  assert.equal(leadName({ name: "United Kingdom", phone: "" }), "Phone enquiry");
 });
 
 test("bookedSurveys lists un-surveyed appointments, soonest first, flagging overdue", () => {

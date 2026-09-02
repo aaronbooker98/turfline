@@ -1,6 +1,6 @@
 // Phone-first job sheets for the fitters.
 import { esc, todayISO, dayDiff, fmtDate, fmtDateLong } from "../util.js";
-import { quoteFor, materialsFor } from "../model.js";
+import { quoteFor, materialsFor, leadName } from "../model.js";
 import { icon } from "../icons.js";
 
 export function renderJobs(ctx) {
@@ -56,7 +56,7 @@ export function renderJobs(ctx) {
       <div class="jsheet-h" data-toggle="${l.id}">
         <div style="flex:1;min-width:0">
           <div class="d">${esc(when)}</div>
-          <div class="n">${esc(l.name)}</div>
+          <div class="n">${esc(leadName(l))}</div>
           <div class="ad">${esc(`${l.address || ""} ${l.postcode || ""}`.trim())}</div>
         </div>
         <div style="flex:none;display:flex;align-items:center;gap:8px">

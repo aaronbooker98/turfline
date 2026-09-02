@@ -44,9 +44,14 @@ function logActivity(data: any, text: string) {
   if (data.activity.length > 60) data.activity.length = 60;
 }
 
+const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller)$/i;
+const showName = (d: any) => {
+  const n = String(d?.name || "").trim();
+  return n && !NOT_A_NAME.test(n) ? n : (d?.phone ? `Caller ${d.phone}` : "Phone enquiry");
+};
 const leadSummary = (row: any) => {
   const d = row.data ?? {};
-  return { id: row.id, name: d.name || "(no name)", stage: STAGE_LABEL[d.stage] ?? d.stage, postcode: d.postcode || "", phone: d.phone || "" };
+  return { id: row.id, name: showName(d), stage: STAGE_LABEL[d.stage] ?? d.stage, postcode: d.postcode || "", phone: d.phone || "" };
 };
 
 async function loadLead(id: string) {
@@ -180,7 +185,7 @@ async function callTool(name: string, args: Record<string, any>): Promise<string
       if (!row) return "No lead with that id.";
       const d = row.data ?? {};
       const out: any = {
-        id: row.id, name: d.name, stage: STAGE_LABEL[d.stage] ?? d.stage,
+        id: row.id, name: showName(d), realName: d.name || "", stage: STAGE_LABEL[d.stage] ?? d.stage,
         phone: d.phone, email: d.email, address: d.address, postcode: d.postcode,
         nextAction: d.nextAction || null, nextNote: d.nextNote || "",
         survey: {

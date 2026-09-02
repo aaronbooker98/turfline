@@ -26,6 +26,17 @@ export const LOST_REASONS = ["Price", "Timing", "Went elsewhere", "No response",
 
 export const stage = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0];
 
+// Values that call-tracking drops in when it can't identify the caller.
+const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller)$/i;
+
+/** What to show for a lead: their name, or their number if we don't have a name yet. */
+export function leadName(lead) {
+  const n = String(lead?.name || "").trim();
+  if (n && !NOT_A_NAME.test(n)) return n;
+  const phone = String(lead?.phone || "").trim();
+  return phone || "Phone enquiry";
+}
+
 /** Other records that might be the same enquiry — same phone, or same
  *  postcode + name. Used for a non-blocking "possible duplicate" nudge. */
 export function dedupeMatches(lead, leads) {

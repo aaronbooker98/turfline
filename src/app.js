@@ -1,6 +1,6 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
 import { esc, num, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate, money2 } from "./util.js";
-import { quoteFor, actionState, setStage, logActivity, stage, estimateDays, WORKS, paymentState, invoiceTotals } from "./model.js";
+import { quoteFor, actionState, setStage, logActivity, stage, leadName, estimateDays, WORKS, paymentState, invoiceTotals } from "./model.js";
 import { normalise, newLead, newInvoice, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import * as db from "./db.js";
@@ -299,7 +299,7 @@ function refreshDrawerTotals(lead) {
   const title = document.querySelector(".drawer-h h2");
   const sub = document.querySelector(".drawer-h .s");
   const out = document.querySelector(".quote-out");
-  if (title) title.textContent = lead.name || "New enquiry";
+  if (title) title.textContent = lead.name?.trim() || lead.phone ? leadName(lead) : "New enquiry";
   if (sub) sub.textContent = `${stage(lead.stage).label} · ${lead.postcode || lead.address || "no address"} · £${Math.round(q.total).toLocaleString("en-GB")}`;
   if (out) out.innerHTML = quoteBreakdown(lead, state);
 }

@@ -1,6 +1,6 @@
 // Crew schedule — month calendar or week grid, with clash detection.
 import { esc, addDays, mondayOf, parseISO, todayISO, dayDiff, fmtDate } from "../util.js";
-import { quoteFor, jobsOn } from "../model.js";
+import { quoteFor, jobsOn, leadName } from "../model.js";
 import { icon } from "../icons.js";
 
 export function renderSchedule(ctx) {
@@ -54,7 +54,7 @@ function renderMonth(ctx, toggle) {
       const dayNo = dayDiff(l.job.startDate, d) + 1;
       return `<div class="cal-job${clash ? " clash" : ""}${l.job.status === "complete" ? " done" : ""}"
         data-open="${l.id}"${clash ? "" : ` style="border-left-color:${esc(c?.colour || "var(--line)")}"`}>
-        <span class="cj-n">${esc(l.name || "Job")}</span>${total > 1 ? `<span class="cj-d">d${dayNo}/${total}</span>` : ""}</div>`;
+        <span class="cj-n">${esc(leadName(l))}</span>${total > 1 ? `<span class="cj-d">d${dayNo}/${total}</span>` : ""}</div>`;
     }).join("");
     const more = jobs.length > 4 ? `<div class="cal-more">+${jobs.length - 4} more</div>` : "";
 
@@ -106,7 +106,7 @@ function renderWeek(ctx, toggle) {
         const dayNo = dayDiff(l.job.startDate, d) + 1;
         const total = l.job.days || 1;
         return `<div class="jblock${clash ? " clash" : ""}${l.job.status === "complete" ? " done" : ""}" data-open="${l.id}"${clash ? "" : ` style="border-left-color:${esc(crew.colour)}"`}>
-          <div class="jn">${esc(l.name || "Job")}</div>
+          <div class="jn">${esc(leadName(l))}</div>
           <div class="jm">${esc(l.postcode || "")} · day ${dayNo}/${total}</div></div>`;
       }).join("")}</div>`;
     }).join("");
@@ -136,7 +136,7 @@ function unbookedCard(ctx) {
     <div class="card-b flush"><div class="queue">${unbooked.map((l) => {
       const q = quoteFor(l, state.rates, state.business.vat);
       return `<div class="qrow" data-open="${l.id}"><span class="qmark warn"></span>
-        <div class="qmain"><div class="qname">${esc(l.name)}</div>
+        <div class="qmain"><div class="qname">${esc(leadName(l))}</div>
           <div class="qmeta">${q.area} m² · about ${q.days} day${q.days > 1 ? "s" : ""} of work · ${esc(l.postcode || "")}</div></div>
         <div class="qright"><span class="pill warn"><span class="pdot"></span>Needs a date</span></div></div>`;
     }).join("")}</div></div></section>`;

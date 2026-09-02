@@ -1,6 +1,6 @@
 // Board of live enquiries by stage.
 import { esc, money } from "../util.js";
-import { quoteFor, actionState, isCold, stage, BOARD_STAGES } from "../model.js";
+import { quoteFor, actionState, isCold, stage, leadName, BOARD_STAGES } from "../model.js";
 import { icon } from "../icons.js";
 
 function card(lead, total) {
@@ -9,7 +9,7 @@ function card(lead, total) {
     ? `<span class="pill crit"><span class="pdot"></span>${esc(a.label)}</span>`
     : a.kind === "today" ? `<span class="pill warn"><span class="pdot"></span>Today</span>` : "";
   return `<div class="lcard" data-open="${lead.id}" data-lead="${lead.id}" draggable="true">
-    <div class="n">${esc(lead.name || "Unnamed")}</div>
+    <div class="n">${esc(leadName(lead))}</div>
     <div class="a">${esc(lead.postcode || lead.address || "No address yet")}</div>
     <div class="f">${flag}
       ${isCold(lead) ? `<span class="pill neutral">Cold</span>` : ""}

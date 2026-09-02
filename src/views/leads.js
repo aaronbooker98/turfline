@@ -1,11 +1,11 @@
 // Every enquiry in one sortable, filterable table — the CRM list view.
 import { esc, money, num, fmtDate } from "../util.js";
-import { quoteFor, actionState, isCold, stage, STAGES, CHANNELS, channelLabel } from "../model.js";
+import { quoteFor, actionState, isCold, stage, leadName, STAGES, CHANNELS, channelLabel } from "../model.js";
 import { leadValue } from "../analytics.js";
 import { icon } from "../icons.js";
 
 const COLS = [
-  { key: "name", label: "Name", get: (l) => (l.name || "").toLowerCase() },
+  { key: "name", label: "Name", get: (l) => leadName(l).toLowerCase() },
   { key: "stage", label: "Stage", get: (l) => STAGES.findIndex((s) => s.id === l.stage) },
   { key: "source", label: "Source", get: (l) => (l.source || "").toLowerCase() },
   { key: "area", label: "Area", get: (l) => num(l.survey?.areaM2, 0), num: true },
@@ -53,7 +53,7 @@ export function renderLeads(ctx) {
     const flag = a.kind === "overdue" ? "crit" : a.kind === "today" ? "warn" : a.tone;
     return `<tr data-open="${l.id}">
       <td>
-        <div class="lt-name">${esc(l.name || "Unnamed enquiry")}</div>
+        <div class="lt-name">${esc(leadName(l))}</div>
         <div class="lt-sub">${esc(l.postcode || l.address || "No address yet")}</div>
       </td>
       <td><span class="pill ${stageTone(l.stage)}">${esc(st.label)}</span>${isCold(l) ? ` <span class="pill neutral">Cold</span>` : ""}</td>

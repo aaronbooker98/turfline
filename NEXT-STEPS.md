@@ -87,6 +87,10 @@ Supabase project `jhkhchhszwmtlhnhmowr`. Live at crm.yateartificialgrass.com.
 Loose ends:
 - [x] Ran the pricing reset SQL (per-m² model live).
 - [x] Ran the `invoices` table SQL (2026-08-30).
+- [ ] **Redeploy the `ingest` function** — updated so un-named phone leads save as
+      "Caller 07…" instead of "United Kingdom" (call-tracking's location fallback).
+      The app already shows the phone number for existing junk-named records
+      (`leadName()` in model.js). Re-deploy `mcp` too for the same fix.
 - [ ] Change the fitters password from "YAG123" to something stronger
       (Supabase -> Auth -> Users -> the fitters row -> reset password).
 - [ ] Settings still has "Load example data" / "Delete every record" — office only
