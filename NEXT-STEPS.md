@@ -123,13 +123,16 @@ Verify-JWT off, secret INGEST_TOKEN set. Tested OK (phone/web mapping, dedup on
 1. **WhatConverts** — CALLS ONLY (their web forms are not tracked by WhatConverts).
    Webhook is URL-only, no headers. Point it at the URL above, trigger "new lead",
    lead types = Phone Call (+ chat/text if used). [in progress]
-2. **WPForms** contact form on yateartificialgrass.com (WordPress + Divi, by
-   YZ Designs) — the ONLY path for web enquiries. Same catcher URL; YZ Designs
-   adds the webhook on the WP side (~10 min). Check WPForms licence supports
-   webhooks (Pro/Elite or Zapier addon) else a `wpforms_process_complete` snippet.
-   The `ingest` function's form-field mapping may need tuning to WPForms' payload.
-
 Until WPForms is wired: office adds web enquiry emails to the CRM by hand.
+2. **Website contact form** (2026-09-16) — turns out it's not WPForms; submissions
+   just email `info@yateartificialgrass.com` ("New Entry: Website Contact Form",
+   fields Name/Email Address/Phone Number/Comment or Message — no postcode field).
+   No webhook available from YZ Designs' side worth chasing, so instead: a Google
+   Apps Script inside the info@ mailbox (`supabase/apps-script/website-form-catcher.gs`,
+   deploy steps in `supabase/DEPLOY-WEBFORM.md`) polls every 5 min, parses the
+   email, and POSTs to the same `ingest` URL with `crm_source: "Website form"`.
+   Free, no third party. `ingest` now respects an explicit `crm_source` instead of
+   always labelling the lead "WhatConverts".
 
 **Phone numbers:**
 - 01454 537330 — AirLandline landline, on the Google listing. Track by adding a
@@ -144,9 +147,8 @@ Until WPForms is wired: office adds web enquiry emails to the CRM by hand.
 2. Add a WhatConverts tracking number for 01454 537330; set AirLandline to forward
    through it. Label "Landline - organic".
 3. Advise best way to track 07861 676629 (keep the number) - divert vs port.
-4. Add a webhook on the WPForms contact form to the same ingest URL. Confirm the
-   WPForms licence supports webhooks (Pro/Elite or Zapier addon) else use a
-   `wpforms_process_complete` snippet. May need mapping tweaks for WPForms' payload.
+4. ~~Web form webhook~~ — not needed; solved via the info@ email catcher instead (see
+   Phase 3 item 2 above).
 
 Ingest webhook URL:
 https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN in Supabase Edge Function secrets>
@@ -159,6 +161,23 @@ https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN
 5. Row-level security so the fitters login can't pull pipeline/money data
 6. Seed / import real data
 7. Keep export-backup working as a safety net
+
+## Deferred — full enquiry-automation spec (2026-09-16)
+
+Aaron was handed a detailed spec (auto text-back via Twilio, AI-parsed email/SMS
+replies via a standalone Anthropic API key, chase-sequence cron, self-service
+survey booking page, daily digest) — assumes Netlify (wrong; we're on Supabase
+Edge Functions) and needs two paid third-party accounts he hasn't set up (Twilio
+w/ verified UK number — has a real verification lead time; a separate
+pay-as-you-go Anthropic API key, billed apart from his Claude.ai subscription).
+Parked pending his decision on those two accounts/costs. In the meantime, solved
+the actual immediate need (web enquiries reaching the pipeline) for free via the
+Phase 3 item 2 email catcher above. If revisited: pipeline stage names already
+match the spec's (`enquiry, survey, surveyed, quoted, won, installed, lost`); the
+name-pollution + duplicate-lead cleanup the spec wants is still outstanding for
+old records (current fix only prevents *new* junk names / dupes going forward —
+see `leadName()` in model.js and the ingest dedupe-by-`_ext`, which doesn't yet
+dedupe across phone+web for the *same* person).
 
 ## Notes
 

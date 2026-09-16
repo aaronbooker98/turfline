@@ -34,7 +34,8 @@ export function leadName(lead) {
   const n = String(lead?.name || "").trim();
   if (n && !NOT_A_NAME.test(n)) return n;
   const phone = String(lead?.phone || "").trim();
-  return phone || "Phone enquiry";
+  if (phone) return phone;
+  return lead?.channel === "web" ? "Web enquiry" : "Phone enquiry";
 }
 
 /** Other records that might be the same enquiry — same phone, or same

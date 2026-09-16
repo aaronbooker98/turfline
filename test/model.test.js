@@ -195,6 +195,7 @@ test("leadName falls back to the phone when the name is missing or a placeholder
   assert.equal(leadName({ name: "Unknown Caller", phone: "0117 111 2222" }), "0117 111 2222");
   assert.equal(leadName({ name: "", phone: "07700 900123" }), "07700 900123");
   assert.equal(leadName({ name: "United Kingdom", phone: "" }), "Phone enquiry");
+  assert.equal(leadName({ name: "", phone: "", channel: "web" }), "Web enquiry");
 });
 
 test("bookedSurveys lists un-surveyed appointments, soonest first, flagging overdue", () => {

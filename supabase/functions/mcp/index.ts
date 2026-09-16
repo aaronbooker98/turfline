@@ -47,7 +47,7 @@ function logActivity(data: any, text: string) {
 const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller)$/i;
 const showName = (d: any) => {
   const n = String(d?.name || "").trim();
-  return n && !NOT_A_NAME.test(n) ? n : (d?.phone ? `Caller ${d.phone}` : "Phone enquiry");
+  return n && !NOT_A_NAME.test(n) ? n : (d?.phone ? `Caller ${d.phone}` : (d?.channel === "web" ? "Web enquiry" : "Phone enquiry"));
 };
 const leadSummary = (row: any) => {
   const d = row.data ?? {};

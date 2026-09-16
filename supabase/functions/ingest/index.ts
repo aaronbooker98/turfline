@@ -58,13 +58,15 @@ Deno.serve(async (req) => {
     if (["referral", "social"].includes(medium)) return `${s} ${medium}`;
     return s;
   })();
-  // Source = where the lead came through (WhatConverts). The marketing detail
-  // (Google Ads, keyword, campaign) goes in the Campaign field so nothing is lost.
-  const source = "WhatConverts";
+  // Source = where the lead came through. WhatConverts payloads don't say so
+  // explicitly (it's always them); other catchers (e.g. the website-form email
+  // reader) pass crm_source themselves. The marketing detail (Google Ads,
+  // keyword, campaign) goes in the Campaign field so nothing is lost.
+  const source = pick("crm_source") || "WhatConverts";
   const campaign = [channelWord, pick("lead_campaign", "campaign"), keyword]
     .filter(Boolean).join(" · ");
 
-  const extId = "wc:" + (pick("lead_id", "leadId", "id") || crypto.randomUUID());
+  const extId = (source === "WhatConverts" ? "wc" : "form") + ":" + (pick("lead_id", "leadId", "id") || crypto.randomUUID());
   const now = new Date().toISOString();
 
   // pull a message out of web-form submissions if present
@@ -87,7 +89,7 @@ Deno.serve(async (req) => {
     || NOT_A_NAME.test(rawName)
     || [city, region, country].some((g) => g && g.toLowerCase() === rawName.toLowerCase())
     || (city && region && rawName.toLowerCase() === `${city}, ${region}`.toLowerCase());
-  const name = nameIsJunk ? (phone ? `Caller ${phone}` : "Phone enquiry") : rawName;
+  const name = nameIsJunk ? (phone ? `Caller ${phone}` : (channel === "web" ? "Web enquiry" : "Phone enquiry")) : rawName;
 
   const lead = {
     name,
@@ -107,7 +109,7 @@ Deno.serve(async (req) => {
       : "Website enquiry — reply",
     survey: { areaM2: "", grassSpec: "", accessPct: 0, notes: message || "" },
     quote: {}, job: {},
-    activity: [{ ts: now, text: `Captured from WhatConverts (${type || "lead"})` }],
+    activity: [{ ts: now, text: `Captured from ${source} (${type || "lead"})` }],
     _ext: extId,
     _raw: body            // kept so the mapping can be tuned against a real payload
   };
