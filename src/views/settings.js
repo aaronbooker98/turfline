@@ -89,15 +89,21 @@ export function renderSettings(ctx) {
       </div></section>
       <section class="card"><div class="card-h"><h3>Calendar sync</h3></div><div class="card-b">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Subscribe to this in Google or Apple Calendar to see every booked survey and install alongside your normal diary. It refreshes itself.</p>
+        <div class="field"><label class="lbl">Calendar key</label>
+          <input class="inp" data-biz="calendarToken" value="${esc(b.calendarToken ?? "")}" placeholder="paste the CALENDAR_TOKEN secret here">
+          <small style="color:var(--muted);font-size:11.5px">Must match the <code>CALENDAR_TOKEN</code> secret on the <code>calendar</code> Edge Function.</small></div>
         <div class="field"><label class="lbl">Feed URL</label>
           <input class="inp" readonly onclick="this.select()" value="${esc(calendarFeedUrl(b))}"></div>
         <p style="margin:0;font-size:11.5px;color:var(--muted)">Google Calendar → Other calendars → <b>From URL</b>. Apple Calendar → File → <b>New Calendar Subscription</b>. Keep this link private. Needs the <code>calendar</code> Edge Function deployed (see <b>supabase/DEPLOY-CALENDAR.md</b>).</p>
       </div></section>
       <section class="card"><div class="card-h"><h3>Claude connector</h3></div><div class="card-b">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Add this in the Claude app (Customize → Connectors → <b>Add custom connector</b>) to let Claude look things up, book surveys, and manage the to-do list by chat.</p>
+        <div class="field"><label class="lbl">Connector key</label>
+          <input class="inp" data-biz="mcpKey" value="${esc(b.mcpKey ?? "")}" placeholder="paste the MCP_KEY secret here">
+          <small style="color:var(--muted);font-size:11.5px">Must match the <code>MCP_KEY</code> secret on the <code>mcp</code> Edge Function. Keep this private — it can read and change your whole CRM.</small></div>
         <div class="field"><label class="lbl">Connector URL</label>
           <input class="inp" readonly onclick="this.select()" value="${esc(mcpUrl(b))}"></div>
-        <p style="margin:0;font-size:11.5px;color:var(--muted)">Keep this link private — it can change your CRM. Needs the <code>mcp</code> Edge Function deployed (see <b>supabase/DEPLOY-MCP.md</b>).</p>
+        <p style="margin:0;font-size:11.5px;color:var(--muted)">Needs the <code>mcp</code> Edge Function deployed (see <b>supabase/DEPLOY-MCP.md</b>).</p>
       </div></section>
       <section class="card"><div class="card-h"><h3>Crews</h3><span class="n">${state.crews.length}</span></div><div class="card-b">
         ${state.crews.map((c, i) => `<div class="crewrow">

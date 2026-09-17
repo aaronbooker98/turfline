@@ -20,17 +20,21 @@ Edge Functions → **Secrets** (or **Manage secrets**) → **Add new secret**:
 
 | Name | Value |
 |---|---|
-| `INGEST_TOKEN` | `tf_6e53b6d70bad3c0d93fc36ac73ab9285b8848399c8b95dcb` |
+| `INGEST_TOKEN` | *(a long random string — ask Claude for the current value, or generate a fresh one and update the webhook URL below to match. This file must never contain the real value.)* |
 
 (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already there automatically.)
 
 ## 3. The webhook URL
 
-Give this to WhatConverts (and keep it — WPForms uses the same one later):
+Give this to WhatConverts (and it's what the Gmail web-form catcher uses too):
 
 ```
-https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=tf_6e53b6d70bad3c0d93fc36ac73ab9285b8848399c8b95dcb
+https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN>
 ```
+
+Replace `<INGEST_TOKEN>` with the actual secret value from step 2 — ask Claude
+for the current one. **Never commit the real value into this file or any
+other file in the repo — it's public.**
 
 ## 4. Point WhatConverts at it
 
@@ -56,5 +60,5 @@ From a terminal in the project folder:
 ```
 npx supabase login
 npx supabase functions deploy ingest --project-ref jhkhchhszwmtlhnhmowr --no-verify-jwt
-npx supabase secrets set INGEST_TOKEN=tf_6e53b6d70bad3c0d93fc36ac73ab9285b8848399c8b95dcb --project-ref jhkhchhszwmtlhnhmowr
+npx supabase secrets set INGEST_TOKEN=<INGEST_TOKEN> --project-ref jhkhchhszwmtlhnhmowr
 ```

@@ -19,8 +19,10 @@ export function defaultState() {
       invoiceFoot: "OR CASH + CHEQUE ACCEPTED",
       nextInvoiceNo: 261,
       reviewUrl: "",
-      calendarToken: "cal_yag_7c1f9e4a2d8b6035",
-      mcpKey: "mcp_yag_3f8a1c95e07d42b6a9f4c1e8",
+      // Set your own values in Settings — never hardcode real secrets here,
+      // this file is served publicly to every visitor's browser.
+      calendarToken: "",
+      mcpKey: "",
       todos: []
     },
     rates: structuredClone(DEFAULT_RATES),

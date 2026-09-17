@@ -20,17 +20,18 @@ Edge Functions → **Secrets** → **Add new secret**:
 
 | Name | Value |
 |---|---|
-| `CALENDAR_TOKEN` | `cal_yag_7c1f9e4a2d8b6035` |
+| `CALENDAR_TOKEN` | *(a long random string — ask Claude for the current value, or generate a fresh one and paste it into Settings → Calendar sync too. This file must never contain the real value.)* |
 
 (This must match the token in **Settings → Calendar sync** in the app. If you
 change one, change the other.)
 
 ## 3. Subscribe
 
-The feed URL (also shown in **Settings → Calendar sync**):
+The feed URL (also shown in **Settings → Calendar sync**, which builds it from
+the key you paste in there — never commit the real value into this file):
 
 ```
-https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/calendar?token=cal_yag_7c1f9e4a2d8b6035
+https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/calendar?token=<CALENDAR_TOKEN>
 ```
 
 - **Google Calendar** (do this on a computer): left sidebar → **Other calendars**
@@ -46,5 +47,5 @@ Keep the link private — anyone with it can see the diary.
 ```
 npx supabase login
 npx supabase functions deploy calendar --project-ref jhkhchhszwmtlhnhmowr --no-verify-jwt
-npx supabase secrets set CALENDAR_TOKEN=cal_yag_7c1f9e4a2d8b6035 --project-ref jhkhchhszwmtlhnhmowr
+npx supabase secrets set CALENDAR_TOKEN=<CALENDAR_TOKEN> --project-ref jhkhchhszwmtlhnhmowr
 ```

@@ -11,9 +11,12 @@ Free, no new accounts, runs inside Google's own tools.
 2. Go to **script.google.com** → **New project**.
 3. Delete the sample `function myFunction() {}` code.
 4. Paste in the whole of `supabase/apps-script/website-form-catcher.gs`.
-5. Click the project name top-left (e.g. "Untitled project") and rename it
+5. On the line near the top starting `var INGEST_URL`, replace `<INGEST_TOKEN>`
+   with the real secret (ask Claude for the current value — never commit the
+   real value back into the repo file).
+6. Click the project name top-left (e.g. "Untitled project") and rename it
    **"Turfline Web Form Catcher"**.
-6. **Save** (the disk icon, or Ctrl/Cmd+S).
+7. **Save** (the disk icon, or Ctrl/Cmd+S).
 
 ## Part B — run it once to authorise it, and test
 

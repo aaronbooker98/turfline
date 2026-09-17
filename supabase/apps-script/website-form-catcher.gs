@@ -9,7 +9,9 @@
 // authorise it, then add a time-driven trigger (every 5–10 minutes) that
 // calls checkForms. See supabase/DEPLOY-WEBFORM.md for full steps.
 
-var INGEST_URL = "https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=tf_6e53b6d70bad3c0d93fc36ac73ab9285b8848399c8b95dcb";
+// Replace <INGEST_TOKEN> with the real secret (ask Claude for the current
+// value) — never commit the actual value here, this file is public.
+var INGEST_URL = "https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/ingest?token=<INGEST_TOKEN>";
 var LABEL_NAME = "turfline-processed";
 var SEARCH = 'subject:"New Entry: Website Contact Form" -label:' + LABEL_NAME;
 

@@ -18,7 +18,7 @@ Edge Functions → **Secrets** → **Add new secret**:
 
 | Name | Value |
 |---|---|
-| `MCP_KEY` | `mcp_yag_3f8a1c95e07d42b6a9f4c1e8` |
+| `MCP_KEY` | *(a long random string — ask Claude for the current value, or generate a fresh one and paste it into Settings → Claude connector too. This file must never contain the real value.)* |
 
 (Must match **Settings → Claude connector** in the app.)
 
@@ -27,10 +27,11 @@ Edge Functions → **Secrets** → **Add new secret**:
 Paste this into a terminal (or any REST tool) — it should return a JSON list of tools:
 
 ```
-curl -s "https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=mcp_yag_3f8a1c95e07d42b6a9f4c1e8" \
+curl -s "https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=<MCP_KEY>" \
   -H "content-type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
+(swap `<MCP_KEY>` for the real value from Part B)
 
 - JSON with `"tools":[...]` → working ✅
 - `{"error":"forbidden"}` → the secret in Part B is wrong or missing
@@ -39,9 +40,10 @@ curl -s "https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=mcp_yag_3
 
 1. In the Claude app (web or phone): **Customize → Connectors**
 2. **Add custom connector**
-3. **URL:**
+3. **URL:** (the one shown in Settings → Claude connector, once you've pasted
+   your `MCP_KEY` in there)
    ```
-   https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=mcp_yag_3f8a1c95e07d42b6a9f4c1e8
+   https://jhkhchhszwmtlhnhmowr.supabase.co/functions/v1/mcp?key=<MCP_KEY>
    ```
 4. Leave Advanced / OAuth settings blank. **Confirm.**
 5. It should show "turfline" with a list of tools. Turn it on.
@@ -63,5 +65,5 @@ tick off to-dos · list unpaid invoices · mark an invoice paid.
 ```
 npx supabase login
 npx supabase functions deploy mcp --project-ref jhkhchhszwmtlhnhmowr --no-verify-jwt
-npx supabase secrets set MCP_KEY=mcp_yag_3f8a1c95e07d42b6a9f4c1e8 --project-ref jhkhchhszwmtlhnhmowr
+npx supabase secrets set MCP_KEY=<MCP_KEY> --project-ref jhkhchhszwmtlhnhmowr
 ```
