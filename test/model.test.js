@@ -196,6 +196,11 @@ test("leadName falls back to the phone when the name is missing or a placeholder
   assert.equal(leadName({ name: "", phone: "07700 900123" }), "07700 900123");
   assert.equal(leadName({ name: "United Kingdom", phone: "" }), "Phone enquiry");
   assert.equal(leadName({ name: "", phone: "", channel: "web" }), "Web enquiry");
+  // Old leads where an earlier ingest version literally wrote the placeholder
+  // word into the name field — must still re-derive, not display it verbatim.
+  assert.equal(leadName({ name: "Phone enquiry", phone: "07700 900123", channel: "web" }), "07700 900123");
+  assert.equal(leadName({ name: "Phone enquiry", phone: "", channel: "web" }), "Web enquiry");
+  assert.equal(leadName({ name: "Web enquiry", phone: "", channel: "phone" }), "Phone enquiry");
 });
 
 test("bookedSurveys lists un-surveyed appointments, soonest first, flagging overdue", () => {

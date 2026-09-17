@@ -26,8 +26,10 @@ export const LOST_REASONS = ["Price", "Timing", "Went elsewhere", "No response",
 
 export const stage = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0];
 
-// Values that call-tracking drops in when it can't identify the caller.
-const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller)$/i;
+// Values that call-tracking drops in when it can't identify the caller —
+// including our own past placeholder names, so an old stored "Phone enquiry"
+// re-derives against today's data instead of sticking forever.
+const NOT_A_NAME = /^(united kingdom|england|scotland|wales|northern ireland|great britain|uk|unknown( caller)?|not provided|no name|n\/?a|none|null|anonymous|wireless caller|withheld|private|caller|phone enquiry|web enquiry)$/i;
 
 /** What to show for a lead: their name, or their number if we don't have a name yet. */
 export function leadName(lead) {
