@@ -62,13 +62,17 @@ function checkForms() {
 function parseFormEmail(body) {
   var lines = body.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
   var labels = { "Name": "name", "Email Address": "email", "Phone Number": "phone", "Comment or Message": "message" };
+  // Some notifications render their field labels in bold ("Name"), which
+  // Gmail's plain-text view turns into *Name* — strip that decoration off
+  // before matching, so both styles of email are understood.
+  var plainLabel = function (l) { return l.replace(/^\*+/, "").replace(/\*+$/, "").replace(/:$/, "").trim(); };
   var data = {};
   for (var i = 0; i < lines.length; i++) {
-    var key = labels[lines[i]];
+    var key = labels[plainLabel(lines[i])];
     if (!key) continue;
     var val = [];
     var j = i + 1;
-    while (j < lines.length && !labels[lines[j]] && lines[j].indexOf("Sent from") !== 0) {
+    while (j < lines.length && !labels[plainLabel(lines[j])] && lines[j].indexOf("Sent from") !== 0) {
       val.push(lines[j]);
       j++;
     }
