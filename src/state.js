@@ -31,7 +31,8 @@ export function defaultState() {
       { id: "c2", name: "Crew B", colour: CREW_COLOURS[1] }
     ],
     leads: [],
-    invoices: []
+    invoices: [],
+    prospects: []
   };
 }
 
@@ -46,6 +47,7 @@ export function normalise(state) {
   if (!Array.isArray(s.crews)) s.crews = base.crews;
   if (!Array.isArray(s.leads)) s.leads = [];
   if (!Array.isArray(s.invoices)) s.invoices = [];
+  if (!Array.isArray(s.prospects)) s.prospects = [];
   for (const l of s.leads) {
     l.survey ??= {}; l.quote ??= {}; l.job ??= {}; l.activity ??= []; l.payment ??= {};
     l.channel ??= "manual";
@@ -58,6 +60,13 @@ export function normalise(state) {
     inv.description ??= "Artificial Grass Supply + fit";
     if (inv.amountIncVat == null) inv.amountIncVat = true;
     if (inv.vat == null) inv.vat = true;
+  }
+  for (const p of s.prospects) {
+    p.type ??= "other";
+    p.contactName ??= ""; p.phone ??= ""; p.email ??= ""; p.address ??= "";
+    p.notes ??= "";
+    p.contacted ??= false;
+    p.contactedAt ??= null;
   }
   return s;
 }
@@ -88,6 +97,18 @@ export function newInvoice(state, lead = null) {
     inv.billTo.phone = lead.phone || "";
   }
   return inv;
+}
+
+/** A blank row for the Prospects (cold-outreach) list. */
+export function newProspect() {
+  return {
+    id: newId(),
+    name: "", type: "other",
+    contactName: "", phone: "", email: "", address: "",
+    notes: "",
+    contacted: false, contactedAt: null,
+    createdAt: new Date().toISOString()
+  };
 }
 
 export function newLead(rates) {

@@ -1,7 +1,7 @@
 // Wiring: auth, view routing, event delegation, and syncing state to Supabase.
 import { esc, num, todayISO, addDays, mondayOf, firstOfMonth, addMonths, setPath, fmtDate, money2 } from "./util.js";
 import { quoteFor, actionState, setStage, logActivity, stage, leadName, estimateDays, WORKS, paymentState, invoiceTotals } from "./model.js";
-import { normalise, newLead, newInvoice, CREW_COLOURS } from "./state.js";
+import { normalise, newLead, newInvoice, newProspect, CREW_COLOURS } from "./state.js";
 import { icon } from "./icons.js";
 import * as db from "./db.js";
 import { renderLogin } from "./views/login.js";
@@ -15,6 +15,7 @@ import { renderJobs } from "./views/jobs.js";
 import { renderSettings } from "./views/settings.js";
 import { renderEstimator, estimatorResults } from "./views/estimator.js";
 import { renderInvoices, invoiceTotalsHtml } from "./views/invoices.js";
+import { renderProspects } from "./views/prospects.js";
 import { renderDrawer, quoteBreakdown } from "./views/drawer.js";
 import { buildQuoteDoc } from "./views/quote-doc.js";
 import { buildInvoiceDoc } from "./views/invoice-doc.js";
@@ -87,6 +88,9 @@ const ui = {
   leadStage: "",
   leadSource: "",
   leadChannel: "",
+  prospectSearch: "",
+  prospectType: "",
+  prospectFilter: "",
   est: freshEst(),
   invoiceEdit: null,
   deviceCrew: localStorage.getItem("turfline-crew") || null,
@@ -108,13 +112,14 @@ const VIEWS = {
   pipeline: { title: "Pipeline", sub: "Every live enquiry by stage", render: renderPipeline },
   schedule: { title: "Schedule", sub: "Crews, jobs and clashes", render: renderSchedule },
   surveys: { title: "Surveys", sub: "Your survey diary — bookings to measure up", render: renderSurveys },
+  prospects: { title: "Prospects", sub: "Nurseries, care homes, schools & councils worth calling", render: renderProspects },
   analytics: { title: "Analytics", sub: "Funnel, win rate and where the money comes from", render: renderAnalytics },
   estimator: { title: "Quote estimator", sub: "A quick ballpark price — no record needed", render: renderEstimator },
   invoices: { title: "Invoices", sub: "Raise and print invoices", render: renderInvoices },
   jobs: { title: "Job sheets", sub: "For the fitters — open on a phone", render: renderJobs },
   settings: { title: "Settings", sub: "Rates, crews and your data", render: renderSettings }
 };
-const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "surveys", "schedule", "analytics", "invoices", "jobs", "settings"];
+const OFFICE_NAV = ["today", "estimator", "leads", "pipeline", "surveys", "prospects", "schedule", "analytics", "invoices", "jobs", "settings"];
 const FITTER_NAV = ["jobs", "schedule"];
 const navFor = () => (ui.role === "fitters" ? FITTER_NAV : OFFICE_NAV);
 
@@ -262,7 +267,8 @@ function render() {
     pipeline: [c.pipeline, false], schedule: [c.installs, false],
     surveys: [c.surveysDue, c.surveysOverdue > 0],
     analytics: [0, false], estimator: [0, false], jobs: [0, false], settings: [0, false],
-    invoices: [state.invoices.filter((i) => !i.paid).length, false]
+    invoices: [state.invoices.filter((i) => !i.paid).length, false],
+    prospects: [(state.prospects ?? []).filter((p) => !p.contacted).length, false]
   };
   const nav = navFor().map((id) => [id, VIEWS[id].title, ...counts[id]]);
   const v = VIEWS[ui.view];
@@ -405,6 +411,19 @@ document.addEventListener("click", async (e) => {
       const inv = newInvoice(state);
       state.invoices.unshift(inv);
       ui.invoiceEdit = inv.id;
+      save(); render();
+      break;
+    }
+    case "add-prospect": {
+      const p = newProspect();
+      (state.prospects ??= []).unshift(p);
+      save(); render();
+      document.querySelector(`[data-prospect="${p.id}"][data-field="name"]`)?.focus();
+      break;
+    }
+    case "del-prospect": {
+      if (!confirm("Remove this prospect for good?")) break;
+      state.prospects = (state.prospects ?? []).filter((p) => p.id !== el.dataset.id);
       save(); render();
       break;
     }
@@ -633,6 +652,17 @@ document.addEventListener("input", (e) => {
   if (t.id === "leadstage") { ui.leadStage = t.value; return render(); }
   if (t.id === "leadsource") { ui.leadSource = t.value; return render(); }
   if (t.id === "leadchannel") { ui.leadChannel = t.value; return render(); }
+  if (t.id === "pq") {
+    ui.prospectSearch = t.value;
+    const pos = t.selectionStart;
+    render();
+    const again = document.getElementById("pq");
+    again?.focus();
+    again?.setSelectionRange(pos, pos);
+    return;
+  }
+  if (t.id === "prospecttype") { ui.prospectType = t.value; return render(); }
+  if (t.id === "prospectfilter") { ui.prospectFilter = t.value; return render(); }
   if (t.id === "crewpick") {
     ui.deviceCrew = t.value || null;
     ui.deviceCrew ? localStorage.setItem("turfline-crew", ui.deviceCrew) : localStorage.removeItem("turfline-crew");
@@ -672,6 +702,18 @@ document.addEventListener("input", (e) => {
     if (t.dataset.inv === "paid") { inv.paidAt = value ? todayISO() : null; render(); return; }
     const box = document.getElementById("inv-totals");
     if (box) box.innerHTML = invoiceTotalsHtml(inv, state);
+    return;
+  }
+
+  if (t.dataset.prospect) {
+    const p = (state.prospects ?? []).find((x) => x.id === t.dataset.prospect);
+    if (!p) return;
+    const field = t.dataset.field;
+    const value = t.type === "checkbox" ? t.checked : t.value;
+    p[field] = value;
+    if (field === "contacted") { p.contactedAt = value ? todayISO() : null; save(); render(); return; }
+    save();
+    if (field === "type") render();
     return;
   }
 

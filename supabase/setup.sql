@@ -45,6 +45,15 @@ create table if not exists public.invoices (
   updated_at timestamptz not null default now()
 );
 
+-- Cold-outreach targets (nurseries, care homes, schools, councils...), stored
+-- whole as JSON in `data` (name, type, contactName, phone, email, address,
+-- notes, contacted, contactedAt ...). Office only.
+create table if not exists public.prospects (
+  id         uuid primary key default gen_random_uuid(),
+  data       jsonb not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
 -- Maps a logged-in user to a role. Filled automatically by the trigger below.
 create table if not exists public.profiles (
   id   uuid primary key references auth.users(id) on delete cascade,
@@ -89,14 +98,16 @@ create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end; $$;
 
-drop trigger if exists leads_touch    on public.leads;
-drop trigger if exists crews_touch    on public.crews;
-drop trigger if exists settings_touch on public.app_settings;
-drop trigger if exists invoices_touch on public.invoices;
-create trigger leads_touch    before update on public.leads       for each row execute function public.touch_updated_at();
-create trigger crews_touch    before update on public.crews       for each row execute function public.touch_updated_at();
-create trigger settings_touch before update on public.app_settings for each row execute function public.touch_updated_at();
-create trigger invoices_touch before update on public.invoices     for each row execute function public.touch_updated_at();
+drop trigger if exists leads_touch     on public.leads;
+drop trigger if exists crews_touch     on public.crews;
+drop trigger if exists settings_touch  on public.app_settings;
+drop trigger if exists invoices_touch  on public.invoices;
+drop trigger if exists prospects_touch on public.prospects;
+create trigger leads_touch     before update on public.leads       for each row execute function public.touch_updated_at();
+create trigger crews_touch     before update on public.crews       for each row execute function public.touch_updated_at();
+create trigger settings_touch  before update on public.app_settings for each row execute function public.touch_updated_at();
+create trigger invoices_touch  before update on public.invoices     for each row execute function public.touch_updated_at();
+create trigger prospects_touch before update on public.prospects    for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------
 -- Row-level security
@@ -108,6 +119,7 @@ alter table public.app_settings enable row level security;
 alter table public.crews        enable row level security;
 alter table public.leads        enable row level security;
 alter table public.invoices     enable row level security;
+alter table public.prospects    enable row level security;
 alter table public.profiles     enable row level security;
 
 drop policy if exists office_settings   on public.app_settings;
@@ -115,6 +127,7 @@ drop policy if exists office_crews      on public.crews;
 drop policy if exists fitters_read_crews on public.crews;
 drop policy if exists office_leads      on public.leads;
 drop policy if exists office_invoices   on public.invoices;
+drop policy if exists office_prospects  on public.prospects;
 drop policy if exists own_profile       on public.profiles;
 
 create policy office_settings on public.app_settings for all
@@ -130,6 +143,9 @@ create policy office_leads on public.leads for all
   using (public.app_role() = 'office') with check (public.app_role() = 'office');
 
 create policy office_invoices on public.invoices for all
+  using (public.app_role() = 'office') with check (public.app_role() = 'office');
+
+create policy office_prospects on public.prospects for all
   using (public.app_role() = 'office') with check (public.app_role() = 'office');
 
 create policy own_profile on public.profiles for select
@@ -247,6 +263,7 @@ begin
   begin alter publication supabase_realtime add table public.crews;        exception when others then null; end;
   begin alter publication supabase_realtime add table public.app_settings; exception when others then null; end;
   begin alter publication supabase_realtime add table public.invoices;     exception when others then null; end;
+  begin alter publication supabase_realtime add table public.prospects;    exception when others then null; end;
 end $$;
 
 -- ---------------------------------------------------------------------------

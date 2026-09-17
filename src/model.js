@@ -24,6 +24,18 @@ export const channelLabel = (id) => (CHANNELS.find((c) => c.id === id) ?? CHANNE
 
 export const LOST_REASONS = ["Price", "Timing", "Went elsewhere", "No response", "Changed their mind", "Other"];
 
+// Kinds of place worth cold-calling about artificial grass — shown as the
+// "type" picker on the Prospects list.
+export const PROSPECT_TYPES = [
+  { id: "nursery", label: "Nursery / childcare" },
+  { id: "care-home", label: "Nursing / care home" },
+  { id: "school", label: "School" },
+  { id: "college", label: "College / university" },
+  { id: "public", label: "Public space / council" },
+  { id: "other", label: "Other" }
+];
+export const prospectTypeLabel = (id) => (PROSPECT_TYPES.find((t) => t.id === id) ?? PROSPECT_TYPES.at(-1)).label;
+
 export const stage = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0];
 
 // Values that call-tracking drops in when it can't identify the caller —

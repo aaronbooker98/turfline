@@ -44,11 +44,12 @@ const leadToRow = (lead) => { const { id, ...data } = lead; return { id, data };
 /* ---------------- office: full state ---------------- */
 
 export async function loadOfficeState() {
-  const [settings, crews, leads, invoices] = await Promise.all([
+  const [settings, crews, leads, invoices, prospects] = await Promise.all([
     supabase.from("app_settings").select("business,rates").eq("id", 1).single(),
     supabase.from("crews").select("id,name,colour,sort").order("sort"),
     supabase.from("leads").select("id,data").order("updated_at", { ascending: false }),
-    supabase.from("invoices").select("id,data").order("updated_at", { ascending: false })
+    supabase.from("invoices").select("id,data").order("updated_at", { ascending: false }),
+    supabase.from("prospects").select("id,data").order("updated_at", { ascending: false })
   ]);
   for (const r of [settings, crews, leads]) if (r.error) throw new Error(r.error.message);
   return {
@@ -56,7 +57,8 @@ export async function loadOfficeState() {
     rates: settings.data.rates,
     crews: crews.data.map((c) => ({ id: c.id, name: c.name, colour: c.colour })),
     leads: leads.data.map(rowToLead),
-    invoices: invoices.error ? [] : invoices.data.map(rowToLead)
+    invoices: invoices.error ? [] : invoices.data.map(rowToLead),
+    prospects: prospects.error ? [] : prospects.data.map(rowToLead)
   };
 }
 
@@ -95,6 +97,15 @@ export async function pushState(state, prev) {
   for (const id of prevInv.keys())
     if (!nextInvIds.has(id)) ops.push(() => supabase.from("invoices").delete().eq("id", id));
 
+  const prevProsp = new Map((prev?.prospects ?? []).map((p) => [p.id, json(p)]));
+  const nextProspIds = new Set((state.prospects ?? []).map((p) => p.id));
+  const prospRows = [];
+  for (const p of state.prospects ?? [])
+    if (prevProsp.get(p.id) !== json(p)) prospRows.push(leadToRow(p));
+  if (prospRows.length) ops.push(() => supabase.from("prospects").upsert(prospRows, { onConflict: "id" }));
+  for (const id of prevProsp.keys())
+    if (!nextProspIds.has(id)) ops.push(() => supabase.from("prospects").delete().eq("id", id));
+
   for (const run of ops) {
     const { error } = await run();
     if (error) throw new Error(error.message);
@@ -108,6 +119,7 @@ export function subscribeOffice(onChange) {
     .on("postgres_changes", { event: "*", schema: "public", table: "crews" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "prospects" }, onChange)
     .subscribe();
   return () => supabase.removeChannel(ch);
 }

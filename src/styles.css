@@ -340,6 +340,15 @@ textarea.inp{resize:vertical;min-height:70px}
 .lt-sub{font-size:11.5px;color:var(--muted);margin-top:1px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lt-dim{color:var(--muted)}
 
+/* ---------- prospects (cold-outreach list) ---------- */
+.pstack{display:flex;flex-direction:column;gap:5px;min-width:170px}
+.pstack .inp{padding:6px 8px;font-size:12.5px}
+.ptable td{vertical-align:top}
+.ptable tr.done{opacity:.55}
+.ptable tr:hover .todo-x{opacity:1}
+.pcheck{display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;cursor:pointer}
+.pcheck input{width:auto}
+
 /* ---------- analytics ---------- */
 .an-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .an-wide{grid-column:1 / -1}

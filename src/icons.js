@@ -18,7 +18,8 @@ const PATHS = {
   check: '<path d="m5 13 4 4L19 7"/>',
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
   alert: '<path d="M12 8v5m0 3h.01M10.3 3.9 2.4 17.5A1.9 1.9 0 0 0 4 20.4h16a1.9 1.9 0 0 0 1.6-2.9L13.7 3.9a1.9 1.9 0 0 0-3.4 0Z"/>',
-  leaf: '<path d="M4 20c8 0 16-4 16-16 0 0-14-2-14 8 0 3 2 5 2 5"/><path d="M8 16c2-4 6-6 6-6"/>'
+  leaf: '<path d="M4 20c8 0 16-4 16-16 0 0-14-2-14 8 0 3 2 5 2 5"/><path d="M8 16c2-4 6-6 6-6"/>',
+  prospects: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>'
 };
 
 export const icon = (name, cls = "ic") =>
