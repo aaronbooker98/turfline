@@ -20,39 +20,50 @@ function checkForms() {
   var threads = GmailApp.search(SEARCH, 0, 20);
 
   threads.forEach(function (thread) {
-    // Always read the FIRST message in the thread — if Aaron's replied to the
-    // notification, later messages are his reply (with the original quoted
-    // and prefixed with "> ", which won't match the plain layout below).
-    var msg = thread.getMessages()[0];
-    var body = msg.getPlainBody();
-    var data = parseFormEmail(body);
-    var parsedOk = !!(data.name || data.email || data.phone || data.message);
+    // One broken email must never take the rest of the batch down with it —
+    // without this, a single unexpected thread throws, the forEach stops
+    // dead, and every other pending enquiry behind it silently never gets
+    // processed (and keeps not getting processed on every future run too,
+    // since it's still sitting there unlabeled ahead of them in the search).
+    try {
+      // Always read the FIRST message in the thread — if Aaron's replied to
+      // the notification, later messages are his reply (with the original
+      // quoted and prefixed with "> ", which won't match the plain layout).
+      var msg = thread.getMessages()[0];
+      var body = msg.getPlainBody();
+      var data = parseFormEmail(body);
+      var parsedOk = !!(data.name || data.email || data.phone || data.message);
 
-    var payload = {
-      lead_type: "form",
-      crm_source: "Website form",
-      contact_name: data.name || "",
-      email_address: data.email || "",
-      phone_number: data.phone || "",
-      // If the usual field labels weren't found (an older/different layout),
-      // save the raw email text instead of losing the enquiry.
-      notes: data.message || (parsedOk ? "" : body.slice(0, 1500)),
-      id: msg.getId()
-    };
+      var payload = {
+        lead_type: "form",
+        crm_source: "Website form",
+        contact_name: data.name || "",
+        email_address: data.email || "",
+        phone_number: data.phone || "",
+        // If the usual field labels weren't found (an older/different layout),
+        // save the raw email text instead of losing the enquiry.
+        notes: data.message || (parsedOk ? "" : body.slice(0, 1500)),
+        id: msg.getId()
+      };
 
-    var resp = UrlFetchApp.fetch(INGEST_URL, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
+      var resp = UrlFetchApp.fetch(INGEST_URL, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
 
-    if (resp.getResponseCode() === 200) {
-      thread.addLabel(label);
-      Logger.log((parsedOk ? "Sent to CRM: " : "Sent to CRM, could NOT read the fields — raw text saved instead: ")
-        + (data.name || data.email || data.phone || "(check the lead's notes)"));
-    } else {
-      Logger.log("Failed (" + resp.getResponseCode() + "): " + resp.getContentText());
+      if (resp.getResponseCode() === 200) {
+        thread.addLabel(label);
+        Logger.log((parsedOk ? "Sent to CRM: " : "Sent to CRM, could NOT read the fields — raw text saved instead: ")
+          + (data.name || data.email || data.phone || "(check the lead's notes)"));
+      } else {
+        Logger.log("Failed (" + resp.getResponseCode() + "): " + resp.getContentText());
+      }
+    } catch (err) {
+      // Leave it unlabeled so it's retried next run, but don't let it block
+      // the threads after it in this run.
+      Logger.log("Skipped a thread (" + thread.getId() + ") after an error: " + err);
     }
   });
 }
